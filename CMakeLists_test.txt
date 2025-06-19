@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 3.16)
+project(ImageViewerTest)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 簡單的測試版本
+add_executable(TestBasic test_basic.cpp)
+
+# 嘗試查找並鏈接 OpenCV (可選)
+find_package(OpenCV QUIET)
+if(OpenCV_FOUND)
+    target_link_libraries(TestBasic ${OpenCV_LIBS})
+    target_include_directories(TestBasic PRIVATE ${OpenCV_INCLUDE_DIRS})
+    target_compile_definitions(TestBasic PRIVATE USE_OPENCV)
+    message(STATUS "OpenCV found: ${OpenCV_VERSION}")
+else()
+    message(STATUS "OpenCV not found - test will run without OpenCV")
+endif()
+
+# 嘗試查找並鏈接 GLFW (可選)
+find_package(glfw3 QUIET)
+if(glfw3_FOUND)
+    find_package(OpenGL QUIET)
+    if(OpenGL_FOUND)
+        target_link_libraries(TestBasic glfw ${OPENGL_LIBRARIES})
+        target_compile_definitions(TestBasic PRIVATE USE_IMGUI)
+        message(STATUS "GLFW and OpenGL found")
+    else()
+        message(STATUS "OpenGL not found")
+    endif()
+else()
+    message(STATUS "GLFW not found - test will run without GUI")
+endif()
+
+# Windows 特定設置
+if(WIN32)
+    if(TARGET TestBasic AND OpenGL_FOUND)
+        target_link_libraries(TestBasic opengl32)
+    endif()
+endif()
