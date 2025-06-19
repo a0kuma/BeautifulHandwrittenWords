@@ -33,8 +33,7 @@ namespace fs = std::filesystem;
 using namespace std;
 
 class ImageViewer {
-public:
-    struct ImageData {
+public:    struct ImageData {
         std::string filename;
         std::string filepath;
         cv::Mat image;
@@ -43,6 +42,7 @@ public:
         GLuint thumbnailTextureID = 0;
         bool textureLoaded = false;
         bool thumbnailLoaded = false;
+        ImVec2 thumbnailDisplaySize = ImVec2(0, 0); // Actual display size for thumbnail
     };
 
 private:
@@ -234,9 +234,7 @@ private:
         
         std::cout << "[DEBUG] Texture created successfully with ID: " << textureID << std::endl;
         return textureID;
-    }
-
-    // Create thumbnail
+    }    // Create thumbnail with proper aspect ratio
     cv::Mat CreateThumbnail(const cv::Mat& image) {
         std::cout << "[DEBUG] CreateThumbnail called for image " << image.cols << "x" << image.rows << std::endl;
         
@@ -247,6 +245,7 @@ private:
         
         cv::Mat thumbnail;
         try {
+            // Calculate scale to fit within thumbnail size while maintaining aspect ratio
             double scale = std::min(static_cast<double>(thumbnailSize) / image.cols,
                                    static_cast<double>(thumbnailSize) / image.rows);
             int newWidth = static_cast<int>(image.cols * scale);
@@ -259,8 +258,9 @@ private:
                 return cv::Mat();
             }
             
-            cv::resize(image, thumbnail, cv::Size(newWidth, newHeight));
-            std::cout << "[DEBUG] Thumbnail created successfully" << std::endl;
+            // Resize with proper interpolation
+            cv::resize(image, thumbnail, cv::Size(newWidth, newHeight), 0, 0, cv::INTER_AREA);
+            std::cout << "[DEBUG] Thumbnail created successfully with actual size: " << thumbnail.cols << "x" << thumbnail.rows << std::endl;
         } catch (const cv::Exception& e) {
             std::cerr << "[ERROR] OpenCV error during thumbnail creation: " << e.what() << std::endl;
             return cv::Mat();
@@ -270,7 +270,7 @@ private:
         }
         
         return thumbnail;
-    }    // Load all images
+    }// Load all images
     void LoadImageList() {
         std::cout << "[DEBUG] LoadImageList called" << std::endl;
         images.clear();
@@ -440,9 +440,7 @@ private:
             std::cerr << "[ERROR] Unknown exception loading image: " << imgData.filepath << std::endl;
             imgData.image.release();
         }
-    }
-
-    // Load thumbnail texture
+    }    // Load thumbnail texture
     void LoadThumbnailTexture(ImageData& imgData) {
         std::cout << "[DEBUG] LoadThumbnailTexture called for: " << imgData.filename << std::endl;
         
@@ -474,6 +472,13 @@ private:
                 return;
             }
             
+            // Calculate display size for thumbnail to maintain aspect ratio within thumbnail area
+            float thumbWidth = static_cast<float>(imgData.thumbnail.cols);
+            float thumbHeight = static_cast<float>(imgData.thumbnail.rows);
+            imgData.thumbnailDisplaySize = ImVec2(thumbWidth, thumbHeight);
+            
+            std::cout << "[DEBUG] Thumbnail display size: " << thumbWidth << "x" << thumbHeight << std::endl;
+            
             imgData.thumbnailTextureID = CreateTexture(imgData.thumbnail);
             if (imgData.thumbnailTextureID != 0) {
                 imgData.thumbnailLoaded = true;
@@ -488,8 +493,7 @@ private:
         } catch (const std::exception& e) {
             std::cerr << "[ERROR] Standard exception creating thumbnail: " << e.what() << std::endl;
             imgData.thumbnail.release();
-        } catch (...) {
-            std::cerr << "[ERROR] Unknown exception creating thumbnail for: " << imgData.filename << std::endl;
+        } catch (...) {            std::cerr << "[ERROR] Unknown exception creating thumbnail for: " << imgData.filename << std::endl;
             imgData.thumbnail.release();
         }
     }
@@ -607,26 +611,71 @@ public:
                 // Load thumbnail
                 if (!img.thumbnailLoaded) {
                     LoadThumbnailTexture(img);
-                }
-                  if (img.thumbnailLoaded) {
-                    // Display thumbnail
+                }                if (img.thumbnailLoaded) {
+                    // Display thumbnail with proper aspect ratio
                     char buttonId[64];
                     snprintf(buttonId, sizeof(buttonId), "thumbnail_%d", i);
                     
                     try {
-                        if (ImGui::ImageButton(buttonId, reinterpret_cast<void*>(img.thumbnailTextureID), 
-                                             ImVec2(thumbnailSize, thumbnailSize))) {
-                            selectedImageIndex = i;
-                            std::cout << "[DEBUG] Selected image: " << img.filename << std::endl;
+                        // Create a container for the thumbnail with fixed size
+                        ImVec2 containerSize(thumbnailSize, thumbnailSize);
+                        ImVec2 actualSize = img.thumbnailDisplaySize;
+                        
+                        // Center the thumbnail within the container
+                        ImVec2 offset(
+                            (containerSize.x - actualSize.x) * 0.5f,
+                            (containerSize.y - actualSize.y) * 0.5f
+                        );
+                        
+                        // Save cursor position
+                        ImVec2 cursorPos = ImGui::GetCursorPos();
+                        
+                        // Create invisible button for the full container area
+                        bool clicked = ImGui::InvisibleButton(buttonId, containerSize);                        // Draw the thumbnail image centered in the container
+                        // Get the current window position and scroll offset
+                        ImVec2 windowPos = ImGui::GetWindowPos();
+                        ImVec2 windowContentMin = ImGui::GetWindowContentRegionMin();
+                        ImVec2 windowContentMax = ImGui::GetWindowContentRegionMax();
+                        float scrollY = ImGui::GetScrollY();                        // Calculate image position accounting for scroll
+                        ImVec2 imageMin = ImVec2(
+                            windowPos.x + windowContentMin.x + cursorPos.x + offset.x,
+                            windowPos.y + windowContentMin.y + cursorPos.y + offset.y - scrollY
+                        );
+                        ImVec2 imageMax = ImVec2(
+                            imageMin.x + actualSize.x,
+                            imageMin.y + actualSize.y
+                        );
+                        
+                        // Check if the image is visible in the current scroll area
+                        ImVec2 clipMin = ImVec2(windowPos.x + windowContentMin.x, windowPos.y + windowContentMin.y);
+                        ImVec2 clipMax = ImVec2(windowPos.x + windowContentMax.x, windowPos.y + windowContentMax.y);
+                        
+                        // Only draw if the image intersects with the visible area
+                        if (imageMax.y >= clipMin.y && imageMin.y <= clipMax.y) {
+                            // Draw the image
+                            ImGui::GetWindowDrawList()->AddImage(
+                                reinterpret_cast<void*>(img.thumbnailTextureID),
+                                imageMin, imageMax,
+                                ImVec2(0, 0), ImVec2(1, 1),  // UV coordinates
+                                IM_COL32_WHITE  // Tint color
+                            );
                         }
                         
-                        // Highlight selection
+                        // Handle click
+                        if (clicked) {
+                            selectedImageIndex = i;
+                            std::cout << "[DEBUG] Selected image: " << img.filename << std::endl;
+                        }                        // Highlight selection with border around the container
                         if (selectedImageIndex == i) {
-                            ImVec2 rectMin = ImGui::GetItemRectMin();
-                            ImVec2 rectMax = ImGui::GetItemRectMax();
+                            ImVec2 rectMin = ImVec2(
+                                windowPos.x + windowContentMin.x + cursorPos.x,
+                                windowPos.y + windowContentMin.y + cursorPos.y - scrollY
+                            );
+                            ImVec2 rectMax = ImVec2(rectMin.x + containerSize.x, rectMin.y + containerSize.y);
                             ImGui::GetWindowDrawList()->AddRect(rectMin, rectMax, 
                                                               IM_COL32(255, 255, 0, 255), 0.0f, 0, 3.0f);
                         }
+                        
                     } catch (const std::exception& e) {
                         std::cerr << "[ERROR] Exception displaying thumbnail for " << img.filename << ": " << e.what() << std::endl;
                         // Display error placeholder
