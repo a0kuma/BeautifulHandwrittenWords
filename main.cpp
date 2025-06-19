@@ -28,6 +28,14 @@
 
 using namespace std; // do not remove
 
+/**
+ * global variables for binary thresholding
+ */
+static int color_space = 0; // 0=RGB, 1=HSL, 2=HSV
+static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f};
+static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};
+static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};
+
 // Function to load and process image with OpenCV effects
 bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height,
                                   float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false,
@@ -110,17 +118,17 @@ bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int
 
             cv::bitwise_and(h_mask, s_mask, binary_mask);
             cv::bitwise_and(binary_mask, v_mask, binary_mask);
-        }        // Apply binary threshold to create pure binary image (0 or 1 values)
+        } // Apply binary threshold to create pure binary image (0 or 1 values)
         if (!binary_mask.empty())
         {
             // Convert binary mask to pure binary values (0 or 1)
             cv::Mat pure_binary;
-            binary_mask.convertTo(pure_binary, CV_8UC1, 1.0/255.0); // Convert 255 to 1, 0 stays 0
-            
+            binary_mask.convertTo(pure_binary, CV_8UC1, 1.0 / 255.0); // Convert 255 to 1, 0 stays 0
+
             // Convert to 3-channel for consistency with the rest of the pipeline
             cv::Mat binary_3channel;
             cv::cvtColor(pure_binary, binary_3channel, cv::COLOR_GRAY2BGR);
-            
+
             // Scale back to 0-255 range for display purposes
             binary_3channel.convertTo(image, CV_8UC3, 255.0); // Convert 1 to 255, 0 stays 0
         }
@@ -256,10 +264,7 @@ int main()
 
     // Binary threshold parameters
     static bool enable_binary = false;
-    static int color_space = 0;                               // 0=RGB, 1=HSL, 2=HSV
-    static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f}; // R, G, B thresholds
-    static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, L thresholds
-    static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, V thresholds    // Function to load image using OpenCV with processing
+
     auto load_image = [&](const string &path)
     {
         // Clean up previous texture
@@ -304,33 +309,41 @@ int main()
                 cerr << "Error: Could not reload image with effects" << endl;
             }
         }
-    };    // Find and load initial image with *184* in filename
+    }; // Find and load initial image with *184* in filename
     string initial_image_path = "";
     string search_directory = "../impool";
-    
-    try {
+
+    try
+    {
         for (const auto &entry : filesystem::directory_iterator(search_directory))
         {
-            if (entry.is_regular_file()) {
+            if (entry.is_regular_file())
+            {
                 string filename = entry.path().filename().string();
                 string ext = entry.path().extension().string();
                 transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                 bool is_image = (ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".tiff" || ext == ".tga");
-                
-                if (is_image && filename.find("184") != string::npos) {
+
+                if (is_image && filename.find("184") != string::npos)
+                {
                     initial_image_path = filesystem::absolute(entry.path()).string();
                     cout << "Found initial image: " << initial_image_path << endl;
                     break;
                 }
             }
         }
-    } catch (const filesystem::filesystem_error &ex) {
+    }
+    catch (const filesystem::filesystem_error &ex)
+    {
         cerr << "Error searching for initial image: " << ex.what() << endl;
     }
-    
-    if (!initial_image_path.empty()) {
+
+    if (!initial_image_path.empty())
+    {
         load_image(initial_image_path);
-    } else {
+    }
+    else
+    {
         cout << "No image with '184' in filename found in " << search_directory << endl;
     }
 
@@ -381,7 +394,8 @@ int main()
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
-            if (ImGui::Button("Test Button 1")) {
+            if (ImGui::Button("Test Button 1"))
+            {
                 cout << "Test Button 1 clicked!" << endl;
             }
 
