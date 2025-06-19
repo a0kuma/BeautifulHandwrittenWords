@@ -1,3 +1,8 @@
+/**
+ * !important!
+ * cd build; cmake .. -G "Visual Studio 17 2022" -A x64 ; cmake --build . --config Release; .\Release\ImageViewer.exe 
+ */
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -5,6 +10,12 @@
 #include <algorithm>
 #include <memory>
 #include <cstdio>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 #include <opencv2/opencv.hpp>
 #include <imgui.h>
@@ -39,10 +50,13 @@ private:
     int selectedImageIndex = -1;
     const int thumbnailSize = 128;
     const std::string imageFolder = "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\impool";
-    GLFWwindow* window;
-
-    // OpenGL texture creation helper
+    GLFWwindow* window;    // OpenGL texture creation helper
     GLuint CreateTexture(const cv::Mat& image) {
+        if (image.empty()) {
+            std::cerr << "Cannot create texture from empty image" << std::endl;
+            return 0;
+        }
+        
         GLuint textureID;
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -61,6 +75,12 @@ private:
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rgbImage.cols, rgbImage.rows, 
                      0, GL_RGB, GL_UNSIGNED_BYTE, rgbImage.data);
         
+        // Check for OpenGL errors
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR) {
+            std::cerr << "OpenGL error creating texture: " << error << std::endl;
+        }
+        
         return textureID;
     }
 
@@ -73,29 +93,40 @@ private:
         int newHeight = static_cast<int>(image.rows * scale);
         cv::resize(image, thumbnail, cv::Size(newWidth, newHeight));
         return thumbnail;
-    }
-
-    // Load all images
+    }    // Load all images
     void LoadImageList() {
         images.clear();
         
+        std::cout << "Checking image folder: " << imageFolder << std::endl;
+        
         if (!fs::exists(imageFolder)) {
             std::cout << "Folder does not exist: " << imageFolder << std::endl;
-            return;
+            std::cout << "Creating the folder..." << std::endl;
+            try {
+                fs::create_directories(imageFolder);
+            } catch (const std::exception& e) {
+                std::cerr << "Failed to create directory: " << e.what() << std::endl;
+                return;
+            }
         }
 
-        for (const auto& entry : fs::directory_iterator(imageFolder)) {
-            if (entry.is_regular_file()) {
-                std::string extension = entry.path().extension().string();
-                std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-                
-                if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp") {
-                    ImageData imgData;
-                    imgData.filename = entry.path().filename().string();
-                    imgData.filepath = entry.path().string();
-                    images.push_back(imgData);
+        try {
+            for (const auto& entry : fs::directory_iterator(imageFolder)) {
+                if (entry.is_regular_file()) {
+                    std::string extension = entry.path().extension().string();
+                    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+                    
+                    if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp") {
+                        ImageData imgData;
+                        imgData.filename = entry.path().filename().string();
+                        imgData.filepath = entry.path().string();
+                        images.push_back(imgData);
+                        std::cout << "Found image: " << imgData.filename << std::endl;
+                    }
                 }
             }
+        } catch (const std::exception& e) {
+            std::cerr << "Error reading directory: " << e.what() << std::endl;
         }
         
         std::cout << "Found " << images.size() << " images" << std::endl;
@@ -201,13 +232,18 @@ public:
         std::cout << "Loading image list..." << std::endl;
         
         // Load image list
-        LoadImageList();
-
-        std::cout << "Initialization complete!" << std::endl;
+        LoadImageList();        std::cout << "Initialization complete!" << std::endl;
         return true;
-    }void Run() {
+    }
+      void Run() {
+        std::cout << "Starting main loop..." << std::endl;
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+            
+            // Check for ESC key to exit
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
 
             // Start ImGui frame
             ImGui_ImplOpenGL3_NewFrame();
@@ -353,6 +389,14 @@ public:
 };
 
 int main() {
+    // Allocate console for Windows GUI application
+    #ifdef _WIN32
+    AllocConsole();
+    freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+    freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
+    freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
+    #endif
+    
     cout<< "Image Viewer Application" << endl;
     ImageViewer viewer;
     cout<< "debug point1" << endl;
