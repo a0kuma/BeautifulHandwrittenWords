@@ -31,16 +31,40 @@ using namespace std;//do not remove
 // Simple helper function to load an image into a OpenGL texture using OpenCV
 bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height)
 {
-    // Load image using OpenCV
+    // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
     cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
-    if (image.empty())
+    if (image.empty()) {
+        cerr << "Failed to load image: " << filename << endl;
         return false;
+    }
+
+    // Debug: Print image properties
+    cout << "Loaded image: " << filename << endl;
+    cout << "  Channels: " << image.channels() << endl;
+    cout << "  Size: " << image.cols << "x" << image.rows << endl;
+    cout << "  Type: " << image.type() << " (should be " << CV_8UC3 << " for 8-bit 3-channel)" << endl;
+
+    // Ensure image is 3-channel BGR
+    if (image.channels() != 3) {
+        if (image.channels() == 4) {
+            cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
+            cout << "  Converted from 4-channel to 3-channel" << endl;
+        } else if (image.channels() == 1) {
+            cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
+            cout << "  Converted from grayscale to 3-channel" << endl;
+        }
+    }
 
     // Convert BGR to RGB (OpenCV uses BGR by default)
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     
     // Flip the image vertically (OpenGL expects origin at bottom-left, OpenCV at top-left)
     cv::flip(image, image, 0);
+
+    // Ensure continuous memory layout
+    if (!image.isContinuous()) {
+        image = image.clone();
+    }
 
     // Create a OpenGL texture identifier
     GLuint image_texture;
@@ -50,19 +74,31 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Upload pixels into texture
+    // Upload pixels into texture - specify correct alignment
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
+    
+    // Upload as RGB 3-channel
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+
+    // Check for OpenGL errors
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        cerr << "OpenGL error after texture upload: " << error << endl;
+        glDeleteTextures(1, &image_texture);
+        return false;
+    }
 
     *out_texture = image_texture;
     *out_width = image.cols;
     *out_height = image.rows;
 
+    cout << "  Successfully created OpenGL texture: " << image_texture << endl;
     return true;
 }
 
@@ -70,10 +106,21 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
 bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height, 
                                  float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false)
 {
-    // Load image using OpenCV
+    // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
     cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
-    if (image.empty())
+    if (image.empty()) {
+        cerr << "Failed to load image for processing: " << filename << endl;
         return false;
+    }
+
+    // Ensure image is 3-channel BGR
+    if (image.channels() != 3) {
+        if (image.channels() == 4) {
+            cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
+        } else if (image.channels() == 1) {
+            cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
+        }
+    }
 
     // Apply grayscale conversion if requested
     if (grayscale) {
@@ -97,6 +144,11 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
     // Flip the image vertically (OpenGL expects origin at bottom-left, OpenCV at top-left)
     cv::flip(image, image, 0);
 
+    // Ensure continuous memory layout
+    if (!image.isContinuous()) {
+        image = image.clone();
+    }
+
     // Create a OpenGL texture identifier
     GLuint image_texture;
     glGenTextures(1, &image_texture);
@@ -108,11 +160,22 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Upload pixels into texture
+    // Upload pixels into texture - specify correct alignment
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
+    
+    // Upload as RGB 3-channel
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+
+    // Check for OpenGL errors
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        cerr << "OpenGL error after processed texture upload: " << error << endl;
+        glDeleteTextures(1, &image_texture);
+        return false;
+    }
 
     *out_texture = image_texture;
     *out_width = image.cols;
@@ -411,8 +474,7 @@ int main()
                 ImGui::Text("No image texture loaded");
                 ImGui::Text("Select an image from the Image Browser");
             }
-            
-            ImGui::Separator();
+              ImGui::Separator();
             ImGui::Text("Image Properties:");
             ImGui::Text("  Dimensions: %dx%d pixels", image_width, image_height);
             ImGui::Text("  Format: RGB (3 channels)");
@@ -424,6 +486,15 @@ int main()
                 // Calculate file size estimation
                 float size_mb = (image_width * image_height * 3) / (1024.0f * 1024.0f);
                 ImGui::Text("  Memory Usage: %.2f MB (uncompressed)", size_mb);
+                
+                // Show file extension vs actual format warning
+                if (!current_image_path.empty()) {
+                    string ext = filesystem::path(current_image_path).extension().string();
+                    ImGui::Text("  File Extension: %s", ext.c_str());
+                    if (ext == ".jpg" || ext == ".jpeg") {
+                        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "  Warning: Files may be WebP format with wrong extension!");
+                    }
+                }
             }
             
             ImGui::End();
