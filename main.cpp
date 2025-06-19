@@ -543,6 +543,10 @@ int main()
     }; // Initial directory load
     refresh_directory();
 
+    static bool show_clusters_window = false;
+    static std::vector<std::vector<int>> clusters;
+    static int selected_cluster = -1;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -595,20 +599,9 @@ int main()
                     MultithreadCluster clusterer;
                     vector<MultithreadCluster::Point2D> points = clusterer.formCV(nonZeroPoints);
                     double radius = 5.0; // Example radius for clustering
-                    auto clusters = clusterer.cluster(points, radius);
-
-                // Display clusters as ImGui::Selectable
-                ImGui::Begin("Clusters");
-                for (size_t i = 0; i < clusters.size(); ++i)
-                {
-                    std::ostringstream oss;
-                    oss << "Cluster " << i << " (" << clusters[i].size() << " points)";
-                    ImGui::Selectable(oss.str().c_str());
-                }
-                ImGui::End();
-
-
-
+                    clusters = clusterer.cluster(points, radius);
+                    show_clusters_window = true;
+                    selected_cluster = -1; // Reset selection
                 }
                 else
                 {
@@ -619,6 +612,21 @@ int main()
             ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            ImGui::End();
+        }
+
+        if (show_clusters_window)
+        {
+            ImGui::Begin("Clusters", &show_clusters_window);
+            for (size_t i = 0; i < clusters.size(); ++i)
+            {
+                std::ostringstream oss;
+                oss << "Cluster " << i << " (" << clusters[i].size() << " points)";
+                if (ImGui::Selectable(oss.str().c_str(), selected_cluster == static_cast<int>(i)))
+                {
+                    selected_cluster = static_cast<int>(i);
+                }
+            }
             ImGui::End();
         }
 
