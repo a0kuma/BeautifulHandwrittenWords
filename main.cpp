@@ -38,9 +38,9 @@ using namespace std; // do not remove
 /**
  * global variables for binary thresholding
  */
-static int color_space = 0; // 0=RGB, 1=HSL, 2=HSV
+static int color_space = 1; // 0=RGB, 1=HSL, 2=HSV
 static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f};
-static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};
+static float hsl_threshold[3] = {0.0f, 0.0f, 68.0f};
 static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};
 cv::Mat image;
 
@@ -597,16 +597,15 @@ int main()
                     double radius = 5.0; // Example radius for clustering
                     auto clusters = clusterer.cluster(points, radius);
 
-                    cout << "Found " << clusters.size() << " clusters." << endl;
-                    for (size_t i = 0; i < clusters.size(); ++i)
-                    {
-                        cout << "Cluster " << i << ": ";
-                        for (int idx : clusters[i])
-                        {
-                            cout << "(" << points[idx].x << ", " << points[idx].y << ") ";
-                        }
-                        cout << endl;
-                    }
+                // Display clusters as ImGui::Selectable
+                ImGui::Begin("Clusters");
+                for (size_t i = 0; i < clusters.size(); ++i)
+                {
+                    std::ostringstream oss;
+                    oss << "Cluster " << i << " (" << clusters[i].size() << " points)";
+                    ImGui::Selectable(oss.str().c_str());
+                }
+                ImGui::End();
 
 
 
