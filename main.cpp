@@ -381,6 +381,10 @@ int main()
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
+            if (ImGui::Button("Test Button 1")) {
+                cout << "Test Button 1 clicked!" << endl;
+            }
+
             ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
