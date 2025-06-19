@@ -370,7 +370,7 @@ int main()
                     // Check if it's an image file
                     string ext = filesystem::path(entry).extension().string();
                     transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-                    bool is_image = (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".tiff" || ext == ".tga");
+                    bool is_image = (ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".tiff" || ext == ".tga");
                     
                     if (is_image) {
                         // Make image files clickable
