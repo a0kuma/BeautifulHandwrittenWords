@@ -25,20 +25,22 @@
 #include <imgui_impl_glfw.h>//do not remove
 #include <imgui_impl_opengl3.h>//do not remove
 #include <GLFW/glfw3.h>//do not remove
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 using namespace std;//do not remove
 
-// Simple helper function to load an image into a OpenGL texture with common settings
-bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
+// Simple helper function to load an image into a OpenGL texture using OpenCV
+bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height)
 {
-    // Load from file
-    int image_width = 0;
-    int image_height = 0;
-    unsigned char* image_data = stbi_load_from_memory((const unsigned char*)data, (int)data_size, &image_width, &image_height, NULL, 4);
-    if (image_data == NULL)
+    // Load image using OpenCV
+    cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
+    if (image.empty())
         return false;
+
+    // Convert BGR to RGB (OpenCV uses BGR by default)
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    
+    // Flip the image vertically (OpenGL expects origin at bottom-left, OpenCV at top-left)
+    cv::flip(image, image, 0);
 
     // Create a OpenGL texture identifier
     GLuint image_texture;
@@ -48,15 +50,73 @@ bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_textu
     // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
     // Upload pixels into texture
+#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-    stbi_image_free(image_data);
+#endif
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
 
     *out_texture = image_texture;
-    *out_width = image_width;
-    *out_height = image_height;
+    *out_width = image.cols;
+    *out_height = image.rows;
+
+    return true;
+}
+
+// Function to load and process image with OpenCV effects
+bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height, 
+                                 float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false)
+{
+    // Load image using OpenCV
+    cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
+    if (image.empty())
+        return false;
+
+    // Apply grayscale conversion if requested
+    if (grayscale) {
+        cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(image, image, cv::COLOR_GRAY2BGR); // Convert back to 3-channel for consistency
+    }
+
+    // Apply brightness and contrast adjustments
+    if (brightness != 0.0f || contrast != 1.0f) {
+        image.convertTo(image, -1, contrast, brightness);
+    }
+
+    // Apply blur if requested
+    if (blur_kernel > 0) {
+        cv::GaussianBlur(image, image, cv::Size(blur_kernel * 2 + 1, blur_kernel * 2 + 1), 0);
+    }
+
+    // Convert BGR to RGB (OpenCV uses BGR by default)
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    
+    // Flip the image vertically (OpenGL expects origin at bottom-left, OpenCV at top-left)
+    cv::flip(image, image, 0);
+
+    // Create a OpenGL texture identifier
+    GLuint image_texture;
+    glGenTextures(1, &image_texture);
+    glBindTexture(GL_TEXTURE_2D, image_texture);
+
+    // Setup filtering parameters for display
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Upload pixels into texture
+#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+
+    *out_texture = image_texture;
+    *out_width = image.cols;
+    *out_height = image.rows;
 
     return true;
 }
@@ -102,37 +162,63 @@ int main()
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);    // Our state
+    ImGui_ImplGlfw_InitForOpenGL(window, true);    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
     bool show_directory_window = true;
-    bool show_opencv_window = true;    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool show_opencv_window = true;
 
-    // Load image texture variables
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);    // Load image texture variables
     GLuint image_texture = 0;
     int image_width = 0;
     int image_height = 0;
+    string current_image_path = "";
     
-    // Load image file into memory
-    string image_path = "C:/Users/ai/Documents/andy/code/learnPP/impool/IMGname (184).jpg";
-    FILE* file = fopen(image_path.c_str(), "rb");
-    if (file) {
-        fseek(file, 0, SEEK_END);
-        size_t file_size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        
-        vector<unsigned char> file_data(file_size);
-        fread(file_data.data(), 1, file_size, file);
-        fclose(file);
-        
-        // Load texture using the new function
-        if (!LoadTextureFromMemory(file_data.data(), file_size, &image_texture, &image_width, &image_height)) {
-            cerr << "Error: Could not load image texture!" << endl;
+    // Image processing parameters
+    static float brightness = 0.0f;
+    static float contrast = 1.0f;
+    static int blur_kernel = 0;
+    static bool grayscale = false;
+    
+    // Function to load image using OpenCV
+    auto load_image = [&](const string& path) {
+        // Clean up previous texture
+        if (image_texture != 0) {
+            glDeleteTextures(1, &image_texture);
+            image_texture = 0;
         }
-    } else {
-        cerr << "Error: Could not open image file!" << endl;
-    }
+        
+        if (LoadTextureFromFile(path.c_str(), &image_texture, &image_width, &image_height)) {
+            current_image_path = path;
+            cout << "Successfully loaded image: " << path << " (" << image_width << "x" << image_height << ")" << endl;
+        } else {
+            cerr << "Error: Could not load image: " << path << endl;
+            current_image_path = "";
+        }
+    };
+    
+    // Function to reload image with processing effects
+    auto reload_with_effects = [&]() {
+        if (!current_image_path.empty()) {
+            if (image_texture != 0) {
+                glDeleteTextures(1, &image_texture);
+                image_texture = 0;
+            }
+            
+            if (LoadProcessedTextureFromFile(current_image_path.c_str(), &image_texture, &image_width, &image_height,
+                                           brightness, contrast, blur_kernel, grayscale)) {
+                cout << "Reloaded image with effects applied" << endl;
+            } else {
+                cerr << "Error: Could not reload image with effects" << endl;
+            }
+        }
+    };
+    
+    // Load initial image
+    string initial_image_path = "C:/Users/ai/Documents/andy/code/learnPP/impool/IMGname (184).jpg";
+    load_image(initial_image_path);
 
     // Directory listing state
     vector<string> directory_entries;
@@ -203,53 +289,104 @@ int main()
         }        // 4. Show directory listing window
         if (show_directory_window)
         {
-            ImGui::Begin("Directory Listing", &show_directory_window);
+            ImGui::Begin("Image Browser", &show_directory_window);
             
             ImGui::Text("Current Directory: %s", filesystem::absolute(current_path).string().c_str());
+            ImGui::Text("Current Image: %s", current_image_path.empty() ? "None" : filesystem::path(current_image_path).filename().string().c_str());
             
             if (ImGui::Button("Refresh"))
                 refresh_directory();
             
             ImGui::Separator();
             
-            // Show directory contents
+            // Show directory contents with click to load functionality
             if (ImGui::BeginChild("DirectoryContents", ImVec2(0, 300), true))
             {
                 for (const auto& entry : directory_entries)
                 {
-                    ImGui::Text("%s", entry.c_str());
+                    // Check if it's an image file
+                    string ext = filesystem::path(entry).extension().string();
+                    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                    bool is_image = (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".tiff" || ext == ".tga");
+                    
+                    if (is_image) {
+                        // Make image files clickable
+                        if (ImGui::Selectable(entry.c_str())) {
+                            string full_path = filesystem::absolute(current_path + "/" + entry).string();
+                            load_image(full_path);
+                        }
+                        // Highlight current selected image
+                        if (!current_image_path.empty() && filesystem::path(current_image_path).filename().string() == entry) {
+                            ImGui::SameLine();
+                            ImGui::Text("  <-- Current");
+                        }
+                    } else {
+                        // Non-image files shown as regular text
+                        ImGui::Text("%s", entry.c_str());
+                    }
                 }
             }
             ImGui::EndChild();
             
             ImGui::Text("Total items: %zu", directory_entries.size());
+            ImGui::Text("Tip: Click on image files to load them");
             
             ImGui::End();
-        }
-
-        // 5. Show OpenCV image window
+        }        // 5. Show OpenCV image window
         if (show_opencv_window)
         {
-            ImGui::Begin("OpenCV Image", &show_opencv_window);
+            ImGui::Begin("OpenCV Image Viewer", &show_opencv_window);
             
-            ImGui::Text("OpenCV Image (48x48, RGB #ddb98b)");
+            if (!current_image_path.empty()) {
+                ImGui::Text("File: %s", filesystem::path(current_image_path).filename().string().c_str());
+                ImGui::Text("Full Path: %s", current_image_path.c_str());
+            } else {
+                ImGui::Text("No image loaded");
+            }
+            
             ImGui::Separator();
-              // Display the image
+            
+            // Display the image
             if (image_texture != 0)
             {
-                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(48, 48));
+                ImGui::Text("Original size preview:");
+                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(128, 128));
                 
-                // Also show a scaled up version for better visibility
-                ImGui::Text("Scaled up version:");
-                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(192, 192));
+                ImGui::Separator();
+                
+                // Show different scaled versions
+                static float scale = 1.0f;
+                ImGui::SliderFloat("Scale", &scale, 0.1f, 3.0f);
+                
+                float display_width = image_width * scale;
+                float display_height = image_height * scale;
+                
+                // Limit display size to reasonable bounds
+                float max_display = 800.0f;
+                if (display_width > max_display || display_height > max_display) {
+                    float ratio = min(max_display / display_width, max_display / display_height);
+                    display_width *= ratio;
+                    display_height *= ratio;
+                }
+                
+                ImGui::Text("Scaled version (%.1fx):", scale);
+                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(display_width, display_height));
             }
             else
             {
-                ImGui::Text("Failed to load image texture");
+                ImGui::Text("No image texture loaded");
+                ImGui::Text("Select an image from the Image Browser");
             }
             
-            ImGui::Text("Image size: %dx%d", image_width, image_height);
-            ImGui::Text("Image channels: RGBA (4)");
+            ImGui::Separator();
+            ImGui::Text("Image Properties:");
+            ImGui::Text("  Dimensions: %dx%d pixels", image_width, image_height);
+            ImGui::Text("  Format: RGB (3 channels)");
+            if (image_width > 0 && image_height > 0) {
+                float aspect_ratio = (float)image_width / (float)image_height;
+                ImGui::Text("  Aspect Ratio: %.3f", aspect_ratio);
+                ImGui::Text("  Total Pixels: %d", image_width * image_height);
+            }
             
             ImGui::End();
         }
