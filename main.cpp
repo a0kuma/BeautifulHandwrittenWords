@@ -425,20 +425,12 @@ int main()
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
-            static float f = 0.0f;
-            static int counter = 0;
 
             ImGui::Begin("main window");
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
@@ -646,7 +638,7 @@ int main()
                 float display_height = image_height * scale;
 
                 // Limit display size to reasonable bounds
-                float max_display = 600.0f;
+                float max_display = 1920.0f;
                 if (display_width > max_display || display_height > max_display)
                 {
                     float ratio = min(max_display / display_width, max_display / display_height);
