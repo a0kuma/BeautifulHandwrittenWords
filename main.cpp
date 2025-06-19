@@ -26,6 +26,12 @@
 #include <imgui_impl_opengl3.h> //do not remove
 #include <GLFW/glfw3.h>         //do not remove
 
+#include <bits/stdc++.h>
+#include <thread>
+#include <mutex>
+#include <random>
+#include <atomic>
+
 using namespace std; // do not remove
 
 /**
@@ -36,6 +42,178 @@ static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f};
 static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};
 static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};
 cv::Mat image;
+
+// 並查集（Disjoint‑Set Union）支援多執行緒
+class ParallelDSU
+{
+public:
+    ParallelDSU(size_t n) : parent(n), rank(n, 0), locks(n)
+    {
+        std::iota(parent.begin(), parent.end(), 0);
+    }
+
+    int find(int x)
+    {
+        while (true)
+        {
+            int p = parent[x].load(std::memory_order_acquire);
+            if (p == x)
+                return p;
+            // path compression (無鎖)
+            int gp = parent[p].load(std::memory_order_relaxed);
+            if (gp == p)
+                return gp;
+            parent[x].compare_exchange_weak(p, gp, std::memory_order_release);
+            x = gp;
+        }
+    }
+
+    void unite(int a, int b)
+    {
+        while (true)
+        {
+            int ra = find(a);
+            int rb = find(b);
+            if (ra == rb)
+                return;
+
+            // 鎖定 root，避免同時 union 造成資料競爭
+            std::scoped_lock lock(locks[std::min(ra, rb)], locks[std::max(ra, rb)]);
+            // roots 可能在鎖前被改變，重新取得
+            ra = find(ra);
+            rb = find(rb);
+            if (ra == rb)
+                return;
+
+            // union by rank
+            if (rank[ra] < rank[rb])
+            {
+                parent[ra].store(rb, std::memory_order_release);
+            }
+            else if (rank[ra] > rank[rb])
+            {
+                parent[rb].store(ra, std::memory_order_release);
+            }
+            else
+            {
+                parent[rb].store(ra, std::memory_order_release);
+                ++rank[ra];
+            }
+            return;
+        }
+    }
+
+private:
+    std::vector<std::atomic<int>> parent;
+    std::vector<int> rank;
+    std::vector<std::mutex> locks;
+};
+
+class MultithreadCluster
+{
+public:
+    typedef struct Point2d
+    {
+        double x;
+        double y;
+    } Point2D; // 二維點
+
+    vector<Point2D> formCV(vector<cv::Point> &points)
+    {
+        vector<Point2D> result;
+        result.reserve(points.size());
+        for (const auto &p : points)
+        {
+            result.push_back({static_cast<double>(p.x), static_cast<double>(p.y)});
+        }
+        return result;
+    } // Convert cv::Point to Point2D
+
+    // 計算平方距離
+    inline double sqDist(const Point &a, const Point &b)
+    {
+        double dx = a.x - b.x;
+        double dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    }
+
+    // 多執行緒叢集函式
+    std::vector<std::vector<int>> cluster(
+        const std::vector<Point> &points,
+        double radius,
+        unsigned thread_cnt = std::thread::hardware_concurrency())
+    {
+        const size_t n = points.size();
+        ParallelDSU dsu(n);
+        const double radius_sq = radius * radius;
+
+        // Monte Carlo：隨機順序處理索引
+        std::vector<size_t> indices(n);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::shuffle(indices.begin(), indices.end(), gen);
+
+        // 每個 thread 處理分段區間
+        std::vector<std::thread> workers;
+        auto work = [&](size_t start_idx, size_t end_idx)
+        {
+            for (size_t idx = start_idx; idx < end_idx; ++idx)
+            {
+                size_t i = indices[idx];
+                for (size_t j = i + 1; j < n; ++j)
+                {
+                    if (sqDist(points[i], points[j]) <= radius_sq)
+                    {
+                        dsu.unite(static_cast<int>(i), static_cast<int>(j));
+                    }
+                }
+            }
+        };
+
+        size_t chunk = (n + thread_cnt - 1) / thread_cnt;
+        size_t begin = 0;
+        for (unsigned t = 0; t < thread_cnt; ++t)
+        {
+            size_t end = std::min(begin + chunk, n);
+            if (begin >= end)
+                break;
+            workers.emplace_back(work, begin, end);
+            begin = end;
+        }
+        for (auto &th : workers)
+            th.join();
+
+        // 收集叢集
+        std::unordered_map<int, std::vector<int>> groups;
+        for (size_t i = 0; i < n; ++i)
+        {
+            int root = dsu.find(static_cast<int>(i));
+            groups[root].push_back(static_cast<int>(i));
+        }
+
+        std::vector<std::vector<int>> clusters;
+        clusters.reserve(groups.size());
+        for (auto &[root, vec] : groups)
+        {
+            clusters.emplace_back(std::move(vec));
+        }
+        return clusters;
+    }
+
+    void show(vector<Point2D> clusters)
+    {
+        for (size_t idx = 0; idx < clusters.size(); ++idx)
+        {
+            std::cout << "Cluster " << idx << " : ";
+            for (int p : clusters[idx])
+            {
+                std::cout << '(' << data[p].x << ',' << data[p].y << ") ";
+            }
+            std::cout << '\n';
+        }
+    }
+};
 
 // Function to load and process image with OpenCV effects
 bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height,
@@ -395,9 +573,60 @@ int main()
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
-            if (ImGui::Button("Test Button 1"))
+            if (ImGui::Button("Compare non-zero points to total pixels"))
             {
-                cout << "Test Button 1 clicked!" << endl;
+                if (!image.empty())
+                {
+                    cv::Mat gray_image;
+                    cv::cvtColor(image, gray_image, cv::COLOR_RGB2GRAY);
+
+                    cv::bitwise_not(gray_image, gray_image);
+
+                    vector<cv::Point> nonZeroPoints;
+                    cv::findNonZero(gray_image, nonZeroPoints);
+
+                    size_t non_zero_count = nonZeroPoints.size();
+                    size_t total_pixels = gray_image.total(); // total() returns rows * cols
+
+                    cout << "Comparison of non-zero points to total pixels:" << endl;
+                    cout << " - Non-zero points found: " << non_zero_count << endl;
+                    cout << " - Total pixels in image: " << total_pixels << endl;
+
+                    if (non_zero_count == total_pixels)
+                    {
+                        cout << "Result: All pixels in the image are non-zero." << endl;
+                    }
+                    else
+                    {
+                        cout << "Result: Not all pixels in the image are non-zero." << endl;
+                    }
+
+/**
+ * do clustering
+ */
+                    MultithreadCluster clusterer;
+                    vector<MultithreadCluster::Point2D> points = clusterer.formCV(nonZeroPoints);
+                    double radius = 5.0; // Example radius for clustering
+                    auto clusters = clusterer.cluster(points, radius);
+
+                    cout << "Found " << clusters.size() << " clusters." << endl;
+                    for (size_t i = 0; i < clusters.size(); ++i)
+                    {
+                        cout << "Cluster " << i << ": ";
+                        for (int idx : clusters[i])
+                        {
+                            cout << "(" << points[idx].x << ", " << points[idx].y << ") ";
+                        }
+                        cout << endl;
+                    }
+
+
+
+                }
+                else
+                {
+                    cout << "No image loaded to perform the check." << endl;
+                }
             }
 
             ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
