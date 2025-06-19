@@ -110,14 +110,19 @@ bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int
 
             cv::bitwise_and(h_mask, s_mask, binary_mask);
             cv::bitwise_and(binary_mask, v_mask, binary_mask);
-        }
-
-        // Apply binary mask to original image
+        }        // Apply binary threshold to create pure binary image (0 or 1 values)
         if (!binary_mask.empty())
         {
-            cv::Mat result = cv::Mat::zeros(image.size(), image.type());
-            image.copyTo(result, binary_mask);
-            image = result;
+            // Convert binary mask to pure binary values (0 or 1)
+            cv::Mat pure_binary;
+            binary_mask.convertTo(pure_binary, CV_8UC1, 1.0/255.0); // Convert 255 to 1, 0 stays 0
+            
+            // Convert to 3-channel for consistency with the rest of the pipeline
+            cv::Mat binary_3channel;
+            cv::cvtColor(pure_binary, binary_3channel, cv::COLOR_GRAY2BGR);
+            
+            // Scale back to 0-255 range for display purposes
+            binary_3channel.convertTo(image, CV_8UC3, 255.0); // Convert 1 to 255, 0 stays 0
         }
     }
 
