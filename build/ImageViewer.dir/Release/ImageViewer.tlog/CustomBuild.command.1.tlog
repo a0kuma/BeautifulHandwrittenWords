@@ -1,0 +1,10 @@
+^C:\USERS\AI\DOCUMENTS\ANDY\CODE\LEARNPP\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/ai/Documents/andy/code/learnPP -BC:/Users/ai/Documents/andy/code/learnPP/build --check-stamp-file C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

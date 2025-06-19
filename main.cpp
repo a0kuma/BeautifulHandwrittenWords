@@ -4,15 +4,22 @@
 #include <filesystem>
 #include <algorithm>
 #include <memory>
+#include <cstdio>
 
 #include <opencv2/opencv.hpp>
-#include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_glfw.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
 #include <GL/gl.h>
 
+// Define OpenGL constants if not already defined
+#ifndef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_TO_EDGE 0x812F
+#endif
+
 namespace fs = std::filesystem;
+using namespace std;
 
 class ImageViewer {
 public:
@@ -31,7 +38,7 @@ private:
     std::vector<ImageData> images;
     int selectedImageIndex = -1;
     const int thumbnailSize = 128;
-    const std::string imageFolder = "./impool";
+    const std::string imageFolder = "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\impool";
     GLFWwindow* window;
 
     // OpenGL texture creation helper
@@ -131,35 +138,44 @@ public:
             if (img.textureLoaded) glDeleteTextures(1, &img.textureID);
             if (img.thumbnailLoaded) glDeleteTextures(1, &img.thumbnailTextureID);
         }
-    }
-
-    bool Initialize() {
+    }    bool Initialize() {
+        std::cout << "Initializing GLFW..." << std::endl;
+        
         // Initialize GLFW
         if (!glfwInit()) {
             std::cerr << "Failed to initialize GLFW" << std::endl;
             return false;
         }
 
-        // Set OpenGL version
+        std::cout << "Setting OpenGL hints..." << std::endl;
+        
+        // Set OpenGL version - try more compatible settings
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
-        // Get primary monitor
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        std::cout << "Creating window..." << std::endl;
         
-        // Create fullscreen window
-        window = glfwCreateWindow(mode->width, mode->height, "Image Viewer", nullptr, nullptr);
+        // Create windowed mode first (easier to debug)
+        window = glfwCreateWindow(1200, 800, "Image Viewer", nullptr, nullptr);
         if (!window) {
             std::cerr << "Failed to create window" << std::endl;
+            const char* description;
+            int code = glfwGetError(&description);
+            if (description) {
+                std::cerr << "GLFW Error: " << code << " - " << description << std::endl;
+            }
             glfwTerminate();
             return false;
         }
 
+        std::cout << "Making context current..." << std::endl;
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1); // Vertical sync
 
+        std::cout << "Initializing ImGui..." << std::endl;
+        
         // Initialize ImGui
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -169,15 +185,27 @@ public:
         // Set ImGui style
         ImGui::StyleColorsDark();
 
+        std::cout << "Initializing ImGui backends..." << std::endl;
+        
         // Initialize ImGui backends
-        ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init("#version 330");
+        if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
+            std::cerr << "Failed to initialize ImGui GLFW backend" << std::endl;
+            return false;
+        }
+        
+        if (!ImGui_ImplOpenGL3_Init("#version 330")) {
+            std::cerr << "Failed to initialize ImGui OpenGL3 backend" << std::endl;
+            return false;
+        }
 
+        std::cout << "Loading image list..." << std::endl;
+        
         // Load image list
         LoadImageList();
 
+        std::cout << "Initialization complete!" << std::endl;
         return true;
-    }    void Run() {
+    }void Run() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
@@ -210,10 +238,11 @@ public:
                 if (!img.thumbnailLoaded) {
                     LoadThumbnailTexture(img);
                 }
-                
-                if (img.thumbnailLoaded) {
+                  if (img.thumbnailLoaded) {
                     // Display thumbnail
-                    if (ImGui::ImageButton(reinterpret_cast<void*>(img.thumbnailTextureID), 
+                    char buttonId[64];
+                    snprintf(buttonId, sizeof(buttonId), "thumbnail_%d", i);
+                    if (ImGui::ImageButton(buttonId, reinterpret_cast<void*>(img.thumbnailTextureID), 
                                          ImVec2(thumbnailSize, thumbnailSize))) {
                         selectedImageIndex = i;
                     }
@@ -324,15 +353,20 @@ public:
 };
 
 int main() {
+    cout<< "Image Viewer Application" << endl;
     ImageViewer viewer;
+    cout<< "debug point1" << endl;
     
     if (!viewer.Initialize()) {
         std::cerr << "Initialization failed" << std::endl;
         return -1;
     }
     
+    cout<< "debug point2" << endl;
     viewer.Run();
+    cout<< "debug point3" << endl;
     viewer.Cleanup();
+    cout<< "debug point4" << endl;
     
     return 0;
 }

@@ -1,14 +1,48 @@
-# 如果您使用 vcpkg，請使用這個版本的 CMakeLists.txt
 cmake_minimum_required(VERSION 3.16)
 project(ImageViewer)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 使用 vcpkg 時的套件查找
-find_package(OpenCV REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
-find_package(OpenGL REQUIRED)
+# 手動設置 vcpkg 路徑
+set(VCPKG_ROOT "C:/vcpkg")
+set(VCPKG_PACKAGES "${VCPKG_ROOT}/packages")
+
+# OpenCV 路徑設置
+set(OpenCV_DIR "${VCPKG_PACKAGES}/opencv4_x64-windows")
+set(OpenCV_INCLUDE_DIRS 
+    "${OpenCV_DIR}/include" 
+    "${OpenCV_DIR}/include/opencv4"
+)
+
+# OpenCV 庫設置 - 只包含我們需要的核心模組
+set(OpenCV_LIBS_RELEASE
+    "${OpenCV_DIR}/lib/opencv_core4.lib"
+    "${OpenCV_DIR}/lib/opencv_imgproc4.lib"
+    "${OpenCV_DIR}/lib/opencv_imgcodecs4.lib"
+    "${OpenCV_DIR}/lib/opencv_highgui4.lib"
+)
+
+set(OpenCV_LIBS_DEBUG
+    "${OpenCV_DIR}/debug/lib/opencv_core4d.lib"
+    "${OpenCV_DIR}/debug/lib/opencv_imgproc4d.lib"
+    "${OpenCV_DIR}/debug/lib/opencv_imgcodecs4d.lib"
+    "${OpenCV_DIR}/debug/lib/opencv_highgui4d.lib"
+)
+
+# GLFW 路徑設置
+set(GLFW_DIR "${VCPKG_PACKAGES}/glfw3_x64-windows")
+set(GLFW_INCLUDE_DIRS "${GLFW_DIR}/include")
+set(GLFW_LIBRARIES_RELEASE "${GLFW_DIR}/lib/glfw3dll.lib")
+set(GLFW_LIBRARIES_DEBUG "${GLFW_DIR}/debug/lib/glfw3dll.lib")
+
+# OpenGL 路徑設置
+set(OPENGL_DIR "${VCPKG_PACKAGES}/opengl_x64-windows")
+set(OPENGL_INCLUDE_DIRS "${OPENGL_DIR}/include")
+set(OPENGL_LIBRARIES 
+    "${OPENGL_DIR}/lib/OpenGL32.Lib"
+    "${OPENGL_DIR}/lib/GlU32.Lib"
+)
 
 # ImGui 源文件
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
@@ -30,18 +64,27 @@ target_include_directories(ImageViewer PRIVATE
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
     ${OpenCV_INCLUDE_DIRS}
+    ${GLFW_INCLUDE_DIRS}
+    ${OPENGL_INCLUDE_DIRS}
 )
 
-# 鏈接庫
+# 鏈接庫 - 使用生成器表達式選擇正確的庫
 target_link_libraries(ImageViewer 
-    ${OpenCV_LIBS}
-    glfw
+    $<$<CONFIG:Debug>:${OpenCV_LIBS_DEBUG}>
+    $<$<CONFIG:Release>:${OpenCV_LIBS_RELEASE}>
+    $<$<CONFIG:Debug>:${GLFW_LIBRARIES_DEBUG}>
+    $<$<CONFIG:Release>:${GLFW_LIBRARIES_RELEASE}>
     ${OPENGL_LIBRARIES}
 )
 
 # Windows 特定設置
 if(WIN32)
-    target_link_libraries(ImageViewer opengl32)
+    # Windows 系統庫
+    target_link_libraries(ImageViewer 
+        user32.lib
+        gdi32.lib
+        shell32.lib
+    )
     # 如果需要控制台窗口，取消下面的註釋
     # set_target_properties(ImageViewer PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
