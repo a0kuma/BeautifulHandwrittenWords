@@ -28,84 +28,6 @@
 
 using namespace std; // do not remove
 
-// Simple helper function to load an image into a OpenGL texture using OpenCV
-bool LoadTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height)
-{
-    // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
-    cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
-    if (image.empty())
-    {
-        cerr << "Failed to load image: " << filename << endl;
-        return false;
-    }
-
-    // Debug: Print image properties
-    cout << "Loaded image: " << filename << endl;
-    cout << "  Channels: " << image.channels() << endl;
-    cout << "  Size: " << image.cols << "x" << image.rows << endl;
-    cout << "  Type: " << image.type() << " (should be " << CV_8UC3 << " for 8-bit 3-channel)" << endl;
-
-    // Ensure image is 3-channel BGR
-    if (image.channels() != 3)
-    {
-        if (image.channels() == 4)
-        {
-            cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
-            cout << "  Converted from 4-channel to 3-channel" << endl;
-        }
-        else if (image.channels() == 1)
-        {
-            cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
-            cout << "  Converted from grayscale to 3-channel" << endl;
-        }
-    }
-
-    // Convert BGR to RGB (OpenCV uses BGR by default)
-    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-
-    // Ensure continuous memory layout
-    if (!image.isContinuous())
-    {
-        image = image.clone();
-    }
-
-    // Create a OpenGL texture identifier
-    GLuint image_texture;
-    glGenTextures(1, &image_texture);
-    glBindTexture(GL_TEXTURE_2D, image_texture);
-
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Upload pixels into texture - specify correct alignment
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
-
-    // Upload as RGB 3-channel
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
-
-    // Check for OpenGL errors
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        cerr << "OpenGL error after texture upload: " << error << endl;
-        glDeleteTextures(1, &image_texture);
-        return false;
-    }
-
-    *out_texture = image_texture;
-    *out_width = image.cols;
-    *out_height = image.rows;
-
-    cout << "  Successfully created OpenGL texture: " << image_texture << endl;
-    return true;
-}
-
 // Function to load and process image with OpenCV effects
 bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height,
                                   float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false,
@@ -332,9 +254,7 @@ int main()
     static int color_space = 0;                               // 0=RGB, 1=HSL, 2=HSV
     static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f}; // R, G, B thresholds
     static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, L thresholds
-    static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, V thresholds
-
-    // Function to load image using OpenCV
+    static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, V thresholds    // Function to load image using OpenCV with processing
     auto load_image = [&](const string &path)
     {
         // Clean up previous texture
@@ -344,7 +264,9 @@ int main()
             image_texture = 0;
         }
 
-        if (LoadTextureFromFile(path.c_str(), &image_texture, &image_width, &image_height))
+        if (LoadProcessedTextureFromFile(path.c_str(), &image_texture, &image_width, &image_height,
+                                         brightness, contrast, blur_kernel, grayscale,
+                                         enable_binary, color_space, rgb_threshold, hsl_threshold, hsv_threshold))
         {
             current_image_path = path;
             cout << "Successfully loaded image: " << path << " (" << image_width << "x" << image_height << ")" << endl;
@@ -377,11 +299,35 @@ int main()
                 cerr << "Error: Could not reload image with effects" << endl;
             }
         }
-    };
-
-    // Load initial image
-    string initial_image_path = "C:/Users/ai/Documents/andy/code/learnPP/impool/IMGname (184).jpg";
-    load_image(initial_image_path);
+    };    // Find and load initial image with *184* in filename
+    string initial_image_path = "";
+    string search_directory = "../impool";
+    
+    try {
+        for (const auto &entry : filesystem::directory_iterator(search_directory))
+        {
+            if (entry.is_regular_file()) {
+                string filename = entry.path().filename().string();
+                string ext = entry.path().extension().string();
+                transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                bool is_image = (ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".tiff" || ext == ".tga");
+                
+                if (is_image && filename.find("184") != string::npos) {
+                    initial_image_path = filesystem::absolute(entry.path()).string();
+                    cout << "Found initial image: " << initial_image_path << endl;
+                    break;
+                }
+            }
+        }
+    } catch (const filesystem::filesystem_error &ex) {
+        cerr << "Error searching for initial image: " << ex.what() << endl;
+    }
+    
+    if (!initial_image_path.empty()) {
+        load_image(initial_image_path);
+    } else {
+        cout << "No image with '184' in filename found in " << search_directory << endl;
+    }
 
     // Directory listing state
     vector<string> directory_entries;
