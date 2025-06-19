@@ -51,15 +51,11 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
             cout << "  Converted from 4-channel to 3-channel" << endl;
         } else if (image.channels() == 1) {
             cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
-            cout << "  Converted from grayscale to 3-channel" << endl;
-        }
+            cout << "  Converted from grayscale to 3-channel" << endl;        }
     }
 
     // Convert BGR to RGB (OpenCV uses BGR by default)
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-    
-    // Flip the image vertically (OpenGL expects origin at bottom-left, OpenCV at top-left)
-    cv::flip(image, image, 0);
 
     // Ensure continuous memory layout
     if (!image.isContinuous()) {
@@ -104,7 +100,9 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
 
 // Function to load and process image with OpenCV effects
 bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height, 
-                                 float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false)
+                                 float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false,
+                                 bool enable_binary = false, int color_space = 0, 
+                                 float rgb_threshold[3] = nullptr, float hsl_threshold[3] = nullptr, float hsv_threshold[3] = nullptr)
 {
     // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
     cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
@@ -122,6 +120,67 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
         }
     }
 
+    // Apply binary threshold if enabled
+    if (enable_binary) {
+        cv::Mat binary_mask;
+        
+        if (color_space == 0 && rgb_threshold) { // RGB
+            cv::Mat bgr_channels[3];
+            cv::split(image, bgr_channels);
+            
+            cv::Mat b_mask, g_mask, r_mask;
+            cv::threshold(bgr_channels[0], b_mask, rgb_threshold[2], 255, cv::THRESH_BINARY); // B channel
+            cv::threshold(bgr_channels[1], g_mask, rgb_threshold[1], 255, cv::THRESH_BINARY); // G channel
+            cv::threshold(bgr_channels[2], r_mask, rgb_threshold[0], 255, cv::THRESH_BINARY); // R channel
+            
+            cv::bitwise_and(b_mask, g_mask, binary_mask);
+            cv::bitwise_and(binary_mask, r_mask, binary_mask);
+        }
+        else if (color_space == 1 && hsl_threshold) { // HSL
+            cv::Mat hls_image;
+            cv::cvtColor(image, hls_image, cv::COLOR_BGR2HLS);
+            
+            cv::Mat hls_channels[3];
+            cv::split(hls_image, hls_channels);
+            
+            cv::Mat h_mask, l_mask, s_mask;
+            // H channel (0-180 in OpenCV)
+            cv::threshold(hls_channels[0], h_mask, hsl_threshold[0], 255, cv::THRESH_BINARY);
+            // L channel (0-255)
+            cv::threshold(hls_channels[1], l_mask, hsl_threshold[2] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
+            // S channel (0-255)
+            cv::threshold(hls_channels[2], s_mask, hsl_threshold[1] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
+            
+            cv::bitwise_and(h_mask, l_mask, binary_mask);
+            cv::bitwise_and(binary_mask, s_mask, binary_mask);
+        }
+        else if (color_space == 2 && hsv_threshold) { // HSV
+            cv::Mat hsv_image;
+            cv::cvtColor(image, hsv_image, cv::COLOR_BGR2HSV);
+            
+            cv::Mat hsv_channels[3];
+            cv::split(hsv_image, hsv_channels);
+            
+            cv::Mat h_mask, s_mask, v_mask;
+            // H channel (0-180 in OpenCV)
+            cv::threshold(hsv_channels[0], h_mask, hsv_threshold[0], 255, cv::THRESH_BINARY);
+            // S channel (0-255)
+            cv::threshold(hsv_channels[1], s_mask, hsv_threshold[1] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
+            // V channel (0-255)
+            cv::threshold(hsv_channels[2], v_mask, hsv_threshold[2] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
+            
+            cv::bitwise_and(h_mask, s_mask, binary_mask);
+            cv::bitwise_and(binary_mask, v_mask, binary_mask);
+        }
+        
+        // Apply binary mask to original image
+        if (!binary_mask.empty()) {
+            cv::Mat result = cv::Mat::zeros(image.size(), image.type());
+            image.copyTo(result, binary_mask);
+            image = result;
+        }
+    }
+
     // Apply grayscale conversion if requested
     if (grayscale) {
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
@@ -135,15 +194,11 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
 
     // Apply blur if requested
     if (blur_kernel > 0) {
-        cv::GaussianBlur(image, image, cv::Size(blur_kernel * 2 + 1, blur_kernel * 2 + 1), 0);
-    }
+        cv::GaussianBlur(image, image, cv::Size(blur_kernel * 2 + 1, blur_kernel * 2 + 1), 0);    }
 
     // Convert BGR to RGB (OpenCV uses BGR by default)
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     
-    // Flip the image vertically (OpenGL expects origin at bottom-left, OpenCV at top-left)
-    cv::flip(image, image, 0);
-
     // Ensure continuous memory layout
     if (!image.isContinuous()) {
         image = image.clone();
@@ -228,8 +283,6 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);    ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     bool show_directory_window = true;
     bool show_opencv_window = true;
 
@@ -238,12 +291,18 @@ int main()
     int image_width = 0;
     int image_height = 0;
     string current_image_path = "";
-    
-    // Image processing parameters
+      // Image processing parameters
     static float brightness = 0.0f;
     static float contrast = 1.0f;
     static int blur_kernel = 0;
     static bool grayscale = false;
+    
+    // Binary threshold parameters
+    static bool enable_binary = false;
+    static int color_space = 0; // 0=RGB, 1=HSL, 2=HSV
+    static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f}; // R, G, B thresholds
+    static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, L thresholds
+    static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, V thresholds
     
     // Function to load image using OpenCV
     auto load_image = [&](const string& path) {
@@ -261,8 +320,7 @@ int main()
             current_image_path = "";
         }
     };
-    
-    // Function to reload image with processing effects
+      // Function to reload image with processing effects
     auto reload_with_effects = [&]() {
         if (!current_image_path.empty()) {
             if (image_texture != 0) {
@@ -271,7 +329,8 @@ int main()
             }
             
             if (LoadProcessedTextureFromFile(current_image_path.c_str(), &image_texture, &image_width, &image_height,
-                                           brightness, contrast, blur_kernel, grayscale)) {
+                                           brightness, contrast, blur_kernel, grayscale,
+                                           enable_binary, color_space, rgb_threshold, hsl_threshold, hsv_threshold)) {
                 cout << "Reloaded image with effects applied" << endl;
             } else {
                 cerr << "Error: Could not reload image with effects" << endl;
@@ -317,17 +376,12 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+            ImGui::Begin("主控制視窗");   
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
@@ -341,15 +395,7 @@ int main()
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
-        }        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }        // 4. Show directory listing window
+        }            // 4. Show directory listing window
         if (show_directory_window)
         {
             ImGui::Begin("Image Browser", &show_directory_window);
@@ -408,8 +454,7 @@ int main()
             }
             
             ImGui::Separator();
-            
-            // Image processing controls
+              // Image processing controls
             if (!current_image_path.empty()) {
                 ImGui::Text("Image Processing Controls:");
                 
@@ -431,12 +476,73 @@ int main()
                     effects_changed = true;
                 }
                 
+                ImGui::Separator();
+                
+                // Binary threshold controls
+                if (ImGui::Checkbox("Enable Binary Threshold", &enable_binary)) {
+                    effects_changed = true;
+                }
+                
+                if (enable_binary) {
+                    ImGui::Text("Color Space Selection:");
+                    
+                    const char* color_space_items[] = { "RGB", "HSL", "HSV" };
+                    if (ImGui::Combo("Color Space", &color_space, color_space_items, IM_ARRAYSIZE(color_space_items))) {
+                        effects_changed = true;
+                    }
+                    
+                    ImGui::Text("Threshold Controls:");
+                    
+                    if (color_space == 0) { // RGB
+                        ImGui::Text("RGB Thresholds (0-255):");
+                        if (ImGui::SliderFloat("Red", &rgb_threshold[0], 0.0f, 255.0f)) {
+                            effects_changed = true;
+                        }
+                        if (ImGui::SliderFloat("Green", &rgb_threshold[1], 0.0f, 255.0f)) {
+                            effects_changed = true;
+                        }
+                        if (ImGui::SliderFloat("Blue", &rgb_threshold[2], 0.0f, 255.0f)) {
+                            effects_changed = true;
+                        }
+                    }
+                    else if (color_space == 1) { // HSL
+                        ImGui::Text("HSL Thresholds:");
+                        if (ImGui::SliderFloat("Hue", &hsl_threshold[0], 0.0f, 180.0f)) {
+                            effects_changed = true;
+                        }
+                        if (ImGui::SliderFloat("Saturation", &hsl_threshold[1], 0.0f, 100.0f)) {
+                            effects_changed = true;
+                        }
+                        if (ImGui::SliderFloat("Lightness", &hsl_threshold[2], 0.0f, 100.0f)) {
+                            effects_changed = true;
+                        }
+                    }
+                    else if (color_space == 2) { // HSV
+                        ImGui::Text("HSV Thresholds:");
+                        if (ImGui::SliderFloat("Hue", &hsv_threshold[0], 0.0f, 180.0f)) {
+                            effects_changed = true;
+                        }
+                        if (ImGui::SliderFloat("Saturation", &hsv_threshold[1], 0.0f, 100.0f)) {
+                            effects_changed = true;
+                        }
+                        if (ImGui::SliderFloat("Value", &hsv_threshold[2], 0.0f, 100.0f)) {
+                            effects_changed = true;
+                        }
+                    }
+                }
+                
                 ImGui::SameLine();
                 if (ImGui::Button("Reset Effects")) {
                     brightness = 0.0f;
                     contrast = 1.0f;
                     blur_kernel = 0;
                     grayscale = false;
+                    enable_binary = false;
+                    color_space = 0;
+                    rgb_threshold[0] = rgb_threshold[1] = rgb_threshold[2] = 128.0f;
+                    hsl_threshold[0] = hsv_threshold[0] = 180.0f;
+                    hsl_threshold[1] = hsl_threshold[2] = 50.0f;
+                    hsv_threshold[1] = hsv_threshold[2] = 50.0f;
                     effects_changed = true;
                 }
                 
