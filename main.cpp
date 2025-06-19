@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <memory>
 #include <cstdio>
+#include <sstream>
+#include <iomanip>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -32,6 +34,97 @@
 namespace fs = std::filesystem;
 using namespace std;
 
+// Centralized Logging System
+class Logger {
+public:
+    enum class Level {
+        DEBUG,
+        INFO,
+        WARNING,
+        ERROR
+    };
+
+private:
+    static const std::string RESET;
+    static const std::string RED;
+    static const std::string GREEN;
+    static const std::string YELLOW;
+    static const std::string BLUE;
+    static const std::string MAGENTA;
+    static const std::string CYAN;
+    static const std::string WHITE;
+    static const std::string BOLD;
+
+public:
+    static void Log(Level level, const std::string& function, int line, const std::string& message) {
+        std::string color;
+        std::string levelStr;
+        
+        switch (level) {
+            case Level::DEBUG:
+                color = CYAN;
+                levelStr = "DEBUG";
+                break;
+            case Level::INFO:
+                color = GREEN;
+                levelStr = "INFO";
+                break;
+            case Level::WARNING:
+                color = YELLOW;
+                levelStr = "WARN";
+                break;
+            case Level::ERROR:
+                color = RED;
+                levelStr = "ERROR";
+                break;
+        }
+        
+        std::cout << color << BOLD << "[" << levelStr << "]" << RESET 
+                  << color << " " << function << ":" << line << " - " << RESET 
+                  << message << std::endl;
+    }
+    
+    static void LogOpenCV(Level level, const std::string& function, int line, const cv::Mat& image, const std::string& desc = "") {
+        std::stringstream ss;
+        if (!desc.empty()) ss << desc << " - ";
+        ss << "Image[" << image.cols << "x" << image.rows 
+           << ", channels:" << image.channels() 
+           << ", type:" << image.type() << "]";
+        Log(level, function, line, ss.str());
+    }
+    
+    static void LogTexture(Level level, const std::string& function, int line, GLuint textureID, const std::string& desc = "") {
+        std::stringstream ss;
+        if (!desc.empty()) ss << desc << " - ";
+        ss << "Texture ID: " << textureID;
+        Log(level, function, line, ss.str());
+    }
+};
+
+// Color constants
+const std::string Logger::RESET = "\033[0m";
+const std::string Logger::RED = "\033[31m";
+const std::string Logger::GREEN = "\033[32m";
+const std::string Logger::YELLOW = "\033[33m";
+const std::string Logger::BLUE = "\033[34m";
+const std::string Logger::MAGENTA = "\033[35m";
+const std::string Logger::CYAN = "\033[36m";
+const std::string Logger::WHITE = "\033[37m";
+const std::string Logger::BOLD = "\033[1m";
+
+// Logging macros
+#define LOG_DEBUG(msg) Logger::Log(Logger::Level::DEBUG, __FUNCTION__, __LINE__, msg)
+#define LOG_INFO(msg) Logger::Log(Logger::Level::INFO, __FUNCTION__, __LINE__, msg)
+#define LOG_WARNING(msg) Logger::Log(Logger::Level::WARNING, __FUNCTION__, __LINE__, msg)
+#define LOG_ERROR(msg) Logger::Log(Logger::Level::ERROR, __FUNCTION__, __LINE__, msg)
+
+#define LOG_OPENCV_DEBUG(image, desc) Logger::LogOpenCV(Logger::Level::DEBUG, __FUNCTION__, __LINE__, image, desc)
+#define LOG_OPENCV_INFO(image, desc) Logger::LogOpenCV(Logger::Level::INFO, __FUNCTION__, __LINE__, image, desc)
+#define LOG_OPENCV_ERROR(image, desc) Logger::LogOpenCV(Logger::Level::ERROR, __FUNCTION__, __LINE__, image, desc)
+
+#define LOG_TEXTURE_DEBUG(textureID, desc) Logger::LogTexture(Logger::Level::DEBUG, __FUNCTION__, __LINE__, textureID, desc)
+#define LOG_TEXTURE_INFO(textureID, desc) Logger::LogTexture(Logger::Level::INFO, __FUNCTION__, __LINE__, textureID, desc)
+
 class ImageViewer {
 public:    struct ImageData {
         std::string filename;
@@ -52,36 +145,35 @@ private:
     const std::string imageFolder = "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\impool";
     GLFWwindow* window;    // OpenGL texture creation helper
     GLuint CreateTexture(const cv::Mat& image) {
-        std::cout << "[DEBUG] CreateTexture called" << std::endl;
+        LOG_DEBUG("CreateTexture called");
         
         if (image.empty()) {
-            std::cerr << "[ERROR] Cannot create texture from empty image" << std::endl;
+            LOG_ERROR("Cannot create texture from empty image");
             return 0;
         }
         
-        std::cout << "[DEBUG] Image info - Size: " << image.cols << "x" << image.rows 
-                  << ", Channels: " << image.channels() << ", Type: " << image.type() << std::endl;
+        LOG_OPENCV_DEBUG(image, "Input image info");
         
         // Check if image is too large
         if (image.cols > 4096 || image.rows > 4096) {
-            std::cerr << "[WARNING] Image is very large: " << image.cols << "x" << image.rows << std::endl;
+            LOG_WARNING("Image is very large: " + std::to_string(image.cols) + "x" + std::to_string(image.rows));
         }
         
         GLuint textureID;
         glGenTextures(1, &textureID);
         if (textureID == 0) {
-            std::cerr << "[ERROR] Failed to generate texture ID" << std::endl;
+            LOG_ERROR("Failed to generate texture ID");
             return 0;
         }
         
-        std::cout << "[DEBUG] Generated texture ID: " << textureID << std::endl;
+        LOG_TEXTURE_DEBUG(textureID, "Generated texture ID");
         
         glBindTexture(GL_TEXTURE_2D, textureID);
         
         // Check for OpenGL errors after binding
         GLenum error = glGetError();
         if (error != GL_NO_ERROR) {
-            std::cerr << "[ERROR] OpenGL error after binding texture: " << error << std::endl;
+            LOG_ERROR("OpenGL error after binding texture: " + std::to_string(error));
             glDeleteTextures(1, &textureID);
             return 0;
         }
@@ -95,77 +187,74 @@ private:
         // Check for OpenGL errors after setting parameters
         error = glGetError();
         if (error != GL_NO_ERROR) {
-            std::cerr << "[ERROR] OpenGL error after setting texture parameters: " << error << std::endl;
+            LOG_ERROR("OpenGL error after setting texture parameters: " + std::to_string(error));
             glDeleteTextures(1, &textureID);
             return 0;
-        }
-          // Convert BGR to RGB
+        }          // Convert BGR to RGB
         cv::Mat rgbImage;
         try {
             // Additional validation before color conversion
             if (image.empty() || image.data == nullptr) {
-                std::cerr << "[ERROR] Input image is empty or has null data before conversion" << std::endl;
+                LOG_ERROR("Input image is empty or has null data before conversion");
                 glDeleteTextures(1, &textureID);
                 return 0;
             }
             
             // Check image data integrity
             if (image.total() == 0) {
-                std::cerr << "[ERROR] Image has zero total elements" << std::endl;
+                LOG_ERROR("Image has zero total elements");
                 glDeleteTextures(1, &textureID);
                 return 0;
             }
             
-            std::cout << "[DEBUG] Converting image with " << image.channels() << " channels, size: " 
-                      << image.cols << "x" << image.rows << ", type: " << image.type() << std::endl;
+            LOG_OPENCV_DEBUG(image, "Converting image");
             
             if (image.channels() == 3) {
                 cv::cvtColor(image, rgbImage, cv::COLOR_BGR2RGB);
-                std::cout << "[DEBUG] Converted from BGR to RGB" << std::endl;
+                LOG_DEBUG("Converted from BGR to RGB");
             } else if (image.channels() == 4) {
                 cv::cvtColor(image, rgbImage, cv::COLOR_BGRA2RGB);
-                std::cout << "[DEBUG] Converted from BGRA to RGB" << std::endl;
+                LOG_DEBUG("Converted from BGRA to RGB");
             } else if (image.channels() == 1) {
                 cv::cvtColor(image, rgbImage, cv::COLOR_GRAY2RGB);
-                std::cout << "[DEBUG] Converted from GRAY to RGB" << std::endl;
+                LOG_DEBUG("Converted from GRAY to RGB");
             } else {
-                std::cerr << "[ERROR] Unsupported image format with " << image.channels() << " channels" << std::endl;
+                LOG_ERROR("Unsupported image format with " + std::to_string(image.channels()) + " channels");
                 glDeleteTextures(1, &textureID);
                 return 0;
             }
             
             // Validate conversion result
             if (rgbImage.empty() || rgbImage.data == nullptr) {
-                std::cerr << "[ERROR] Color conversion failed - result is empty" << std::endl;
+                LOG_ERROR("Color conversion failed - result is empty");
                 glDeleteTextures(1, &textureID);
                 return 0;
             }
             
         } catch (const cv::Exception& e) {
-            std::cerr << "[ERROR] OpenCV error during color conversion: " << e.what() << std::endl;
+            LOG_ERROR("OpenCV error during color conversion: " + std::string(e.what()));
             glDeleteTextures(1, &textureID);
             return 0;
         } catch (const std::exception& e) {
-            std::cerr << "[ERROR] Standard exception during color conversion: " << e.what() << std::endl;
+            LOG_ERROR("Standard exception during color conversion: " + std::string(e.what()));
             glDeleteTextures(1, &textureID);
             return 0;
         } catch (...) {
-            std::cerr << "[ERROR] Unknown exception during color conversion" << std::endl;
+            LOG_ERROR("Unknown exception during color conversion");
             glDeleteTextures(1, &textureID);
             return 0;
-        }
-          // Validate converted image
+        }          // Validate converted image
         if (rgbImage.empty() || rgbImage.data == nullptr) {
-            std::cerr << "[ERROR] RGB image is empty or has null data after conversion" << std::endl;
+            LOG_ERROR("RGB image is empty or has null data after conversion");
             glDeleteTextures(1, &textureID);
             return 0;
         }
         
-        std::cout << "[DEBUG] RGB image size: " << rgbImage.cols << "x" << rgbImage.rows << std::endl;
+        LOG_OPENCV_DEBUG(rgbImage, "RGB image validation");
         
         // Additional validation checks
         if (rgbImage.cols <= 0 || rgbImage.rows <= 0) {
-            std::cerr << "[ERROR] Invalid image dimensions: " << rgbImage.cols << "x" << rgbImage.rows << std::endl;
+            LOG_ERROR("Invalid image dimensions: " + std::to_string(rgbImage.cols) + "x" + std::to_string(rgbImage.rows));
             glDeleteTextures(1, &textureID);
             return 0;
         }
@@ -173,11 +262,11 @@ private:
         // Check if image is too large for OpenGL
         GLint maxTextureSize;
         glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-        std::cout << "[DEBUG] Max OpenGL texture size: " << maxTextureSize << std::endl;
+        LOG_DEBUG("Max OpenGL texture size: " + std::to_string(maxTextureSize));
         
         if (rgbImage.cols > maxTextureSize || rgbImage.rows > maxTextureSize) {
-            std::cerr << "[ERROR] Image too large for OpenGL: " << rgbImage.cols << "x" << rgbImage.rows 
-                      << " (max: " << maxTextureSize << ")" << std::endl;
+            LOG_ERROR("Image too large for OpenGL: " + std::to_string(rgbImage.cols) + "x" + std::to_string(rgbImage.rows) + 
+                     " (max: " + std::to_string(maxTextureSize) + ")");
             glDeleteTextures(1, &textureID);
             return 0;
         }
@@ -185,20 +274,20 @@ private:
         // Validate image data integrity
         int expectedDataSize = rgbImage.cols * rgbImage.rows * 3; // 3 channels for RGB
         if (rgbImage.total() * rgbImage.elemSize() != expectedDataSize) {
-            std::cerr << "[ERROR] Image data size mismatch. Expected: " << expectedDataSize 
-                      << ", Actual: " << (rgbImage.total() * rgbImage.elemSize()) << std::endl;
+            LOG_ERROR("Image data size mismatch. Expected: " + std::to_string(expectedDataSize) + 
+                     ", Actual: " + std::to_string(rgbImage.total() * rgbImage.elemSize()));
             glDeleteTextures(1, &textureID);
             return 0;
         }
         
         // Check if image data is continuous in memory
         if (!rgbImage.isContinuous()) {
-            std::cout << "[DEBUG] Image is not continuous, creating continuous copy" << std::endl;
+            LOG_DEBUG("Image is not continuous, creating continuous copy");
             cv::Mat continuousImage = rgbImage.clone();
             rgbImage = continuousImage;
         }
         
-        std::cout << "[DEBUG] Image validation passed, uploading texture data..." << std::endl;
+        LOG_DEBUG("Image validation passed, uploading texture data...");
         
         // Upload texture data
         try {
@@ -208,18 +297,18 @@ private:
             // Check for OpenGL errors immediately after texture upload
             GLenum uploadError = glGetError();
             if (uploadError != GL_NO_ERROR) {
-                std::cerr << "[ERROR] OpenGL error during texture upload: " << uploadError << std::endl;
+                LOG_ERROR("OpenGL error during texture upload: " + std::to_string(uploadError));
                 glDeleteTextures(1, &textureID);
                 return 0;
             }
             
-            std::cout << "[DEBUG] Texture data uploaded successfully" << std::endl;
+            LOG_DEBUG("Texture data uploaded successfully");
         } catch (const std::exception& e) {
-            std::cerr << "[ERROR] Standard exception during glTexImage2D: " << e.what() << std::endl;
+            LOG_ERROR("Standard exception during glTexImage2D: " + std::string(e.what()));
             glDeleteTextures(1, &textureID);
             return 0;
         } catch (...) {
-            std::cerr << "[ERROR] Unknown exception during glTexImage2D" << std::endl;
+            LOG_ERROR("Unknown exception during glTexImage2D");
             glDeleteTextures(1, &textureID);
             return 0;
         }
@@ -227,19 +316,19 @@ private:
         // Check for OpenGL errors
         error = glGetError();
         if (error != GL_NO_ERROR) {
-            std::cerr << "[ERROR] OpenGL error creating texture: " << error << std::endl;
+            LOG_ERROR("OpenGL error creating texture: " + std::to_string(error));
             glDeleteTextures(1, &textureID);
             return 0;
         }
         
-        std::cout << "[DEBUG] Texture created successfully with ID: " << textureID << std::endl;
+        LOG_TEXTURE_DEBUG(textureID, "Texture created successfully");
         return textureID;
     }    // Create thumbnail with proper aspect ratio
     cv::Mat CreateThumbnail(const cv::Mat& image) {
-        std::cout << "[DEBUG] CreateThumbnail called for image " << image.cols << "x" << image.rows << std::endl;
+        LOG_OPENCV_DEBUG(image, "CreateThumbnail called");
         
         if (image.empty()) {
-            std::cerr << "[ERROR] Cannot create thumbnail from empty image" << std::endl;
+            LOG_ERROR("Cannot create thumbnail from empty image");
             return cv::Mat();
         }
         
@@ -251,39 +340,40 @@ private:
             int newWidth = static_cast<int>(image.cols * scale);
             int newHeight = static_cast<int>(image.rows * scale);
             
-            std::cout << "[DEBUG] Thumbnail scale: " << scale << ", new size: " << newWidth << "x" << newHeight << std::endl;
+            LOG_DEBUG("Thumbnail scale: " + std::to_string(scale) + ", new size: " + 
+                     std::to_string(newWidth) + "x" + std::to_string(newHeight));
             
             if (newWidth <= 0 || newHeight <= 0) {
-                std::cerr << "[ERROR] Invalid thumbnail dimensions: " << newWidth << "x" << newHeight << std::endl;
+                LOG_ERROR("Invalid thumbnail dimensions: " + std::to_string(newWidth) + "x" + std::to_string(newHeight));
                 return cv::Mat();
             }
             
             // Resize with proper interpolation
             cv::resize(image, thumbnail, cv::Size(newWidth, newHeight), 0, 0, cv::INTER_AREA);
-            std::cout << "[DEBUG] Thumbnail created successfully with actual size: " << thumbnail.cols << "x" << thumbnail.rows << std::endl;
+            LOG_OPENCV_DEBUG(thumbnail, "Thumbnail created successfully");
         } catch (const cv::Exception& e) {
-            std::cerr << "[ERROR] OpenCV error during thumbnail creation: " << e.what() << std::endl;
+            LOG_ERROR("OpenCV error during thumbnail creation: " + std::string(e.what()));
             return cv::Mat();
         } catch (...) {
-            std::cerr << "[ERROR] Unknown error during thumbnail creation" << std::endl;
+            LOG_ERROR("Unknown error during thumbnail creation");
             return cv::Mat();
         }
         
         return thumbnail;
     }// Load all images
     void LoadImageList() {
-        std::cout << "[DEBUG] LoadImageList called" << std::endl;
+        LOG_DEBUG("LoadImageList called");
         images.clear();
         
-        std::cout << "Checking image folder: " << imageFolder << std::endl;
+        LOG_INFO("Checking image folder: " + imageFolder);
         
         if (!fs::exists(imageFolder)) {
-            std::cout << "Folder does not exist: " << imageFolder << std::endl;
-            std::cout << "Creating the folder..." << std::endl;
+            LOG_WARNING("Folder does not exist: " + imageFolder);
+            LOG_INFO("Creating the folder...");
             try {
                 fs::create_directories(imageFolder);
             } catch (const std::exception& e) {
-                std::cerr << "Failed to create directory: " << e.what() << std::endl;
+                LOG_ERROR("Failed to create directory: " + std::string(e.what()));
                 return;
             }
         }
@@ -303,22 +393,19 @@ private:
                         // Basic file validation
                         try {
                             auto fileSize = fs::file_size(entry.path());
-                            std::cout << "[DEBUG] Found image: " << imgData.filename 
-                                      << " (size: " << fileSize << " bytes)" << std::endl;
+                            LOG_DEBUG("Found image: " + imgData.filename + " (size: " + std::to_string(fileSize) + " bytes)");
                             
                             if (fileSize == 0) {
-                                std::cerr << "[WARNING] Skipping empty file: " << imgData.filename << std::endl;
+                                LOG_WARNING("Skipping empty file: " + imgData.filename);
                                 continue;
                             }
                             
                             if (fileSize > 100 * 1024 * 1024) { // 100MB limit
-                                std::cerr << "[WARNING] Very large file: " << imgData.filename 
-                                          << " (" << fileSize << " bytes)" << std::endl;
+                                LOG_WARNING("Very large file: " + imgData.filename + " (" + std::to_string(fileSize) + " bytes)");
                             }
                             
                         } catch (const std::exception& e) {
-                            std::cerr << "[WARNING] Cannot get file size for: " << imgData.filename 
-                                      << " - " << e.what() << std::endl;
+                            LOG_WARNING("Cannot get file size for: " + imgData.filename + " - " + std::string(e.what()));
                         }
                         
                         images.push_back(imgData);
@@ -326,90 +413,87 @@ private:
                         
                         // Limit number of images to prevent memory issues
                         if (imageCount >= 1000) {
-                            std::cout << "[WARNING] Reached maximum image limit (1000), stopping scan" << std::endl;
+                            LOG_WARNING("Reached maximum image limit (1000), stopping scan");
                             break;
                         }
                     }
                 }
             }
         } catch (const std::exception& e) {
-            std::cerr << "Error reading directory: " << e.what() << std::endl;
+            LOG_ERROR("Error reading directory: " + std::string(e.what()));
         }
         
-        std::cout << "Found " << images.size() << " images" << std::endl;
-    }
-
-    // Load image texture
+        LOG_INFO("Found " + std::to_string(images.size()) + " images");
+    }    // Load image texture
     void LoadImageTexture(ImageData& imgData) {
-        std::cout << "[DEBUG] LoadImageTexture called for: " << imgData.filename << std::endl;
+        LOG_DEBUG("LoadImageTexture called for: " + imgData.filename);
         
         if (imgData.textureLoaded) {
-            std::cout << "[DEBUG] Texture already loaded, skipping" << std::endl;
+            LOG_DEBUG("Texture already loaded, skipping");
             return;
         }
         
-        std::cout << "[DEBUG] Loading image from: " << imgData.filepath << std::endl;
+        LOG_DEBUG("Loading image from: " + imgData.filepath);
         
         try {
             // Check if file exists and is readable
             if (!fs::exists(imgData.filepath)) {
-                std::cerr << "[ERROR] File does not exist: " << imgData.filepath << std::endl;
+                LOG_ERROR("File does not exist: " + imgData.filepath);
                 return;
             }
             
             // Check file size
             auto fileSize = fs::file_size(imgData.filepath);
-            std::cout << "[DEBUG] File size: " << fileSize << " bytes" << std::endl;
+            LOG_DEBUG("File size: " + std::to_string(fileSize) + " bytes");
             
             if (fileSize == 0) {
-                std::cerr << "[ERROR] File is empty: " << imgData.filepath << std::endl;
+                LOG_ERROR("File is empty: " + imgData.filepath);
                 return;
             }
             
             if (fileSize > 50 * 1024 * 1024) { // 50MB limit
-                std::cerr << "[WARNING] File is very large: " << fileSize << " bytes" << std::endl;
+                LOG_WARNING("File is very large: " + std::to_string(fileSize) + " bytes");
             }
               imgData.image = cv::imread(imgData.filepath, cv::IMREAD_COLOR);
             
             if (imgData.image.empty()) {
-                std::cerr << "[ERROR] Cannot load image: " << imgData.filepath << std::endl;
+                LOG_ERROR("Cannot load image: " + imgData.filepath);
                 // Try different loading modes
-                std::cout << "[DEBUG] Trying to load with IMREAD_UNCHANGED flag" << std::endl;
+                LOG_DEBUG("Trying to load with IMREAD_UNCHANGED flag");
                 imgData.image = cv::imread(imgData.filepath, cv::IMREAD_UNCHANGED);
                 
                 if (imgData.image.empty()) {
-                    std::cerr << "[ERROR] Failed to load image with any method" << std::endl;
+                    LOG_ERROR("Failed to load image with any method");
                     return;
                 }
             }
             
-            std::cout << "[DEBUG] Image loaded successfully: " << imgData.image.cols << "x" << imgData.image.rows 
-                      << ", channels: " << imgData.image.channels() << ", type: " << imgData.image.type() << std::endl;
+            LOG_OPENCV_DEBUG(imgData.image, "Image loaded successfully");
             
             // Additional validation for the loaded image
             if (imgData.image.cols <= 0 || imgData.image.rows <= 0) {
-                std::cerr << "[ERROR] Invalid image dimensions after loading: " << imgData.image.cols << "x" << imgData.image.rows << std::endl;
+                LOG_ERROR("Invalid image dimensions after loading: " + std::to_string(imgData.image.cols) + "x" + std::to_string(imgData.image.rows));
                 imgData.image.release();
                 return;
             }
             
             // Check for reasonable image size limits
             if (imgData.image.cols > 16384 || imgData.image.rows > 16384) {
-                std::cerr << "[ERROR] Image dimensions too large: " << imgData.image.cols << "x" << imgData.image.rows << std::endl;
+                LOG_ERROR("Image dimensions too large: " + std::to_string(imgData.image.cols) + "x" + std::to_string(imgData.image.rows));
                 imgData.image.release();
                 return;
             }
             
             // Validate image channels
             if (imgData.image.channels() < 1 || imgData.image.channels() > 4) {
-                std::cerr << "[ERROR] Invalid number of channels: " << imgData.image.channels() << std::endl;
+                LOG_ERROR("Invalid number of channels: " + std::to_string(imgData.image.channels()));
                 imgData.image.release();
                 return;
             }
             
             // Check image data type
             if (imgData.image.depth() != CV_8U) {
-                std::cout << "[DEBUG] Converting image to 8-bit unsigned" << std::endl;
+                LOG_DEBUG("Converting image to 8-bit unsigned");
                 cv::Mat converted;
                 imgData.image.convertTo(converted, CV_8U);
                 imgData.image = converted;
@@ -417,7 +501,7 @@ private:
             
             // Validate image data
             if (imgData.image.data == nullptr) {
-                std::cerr << "[ERROR] Image data is null" << std::endl;
+                LOG_ERROR("Image data is null");
                 imgData.image.release();
                 return;
             }
@@ -425,50 +509,50 @@ private:
             imgData.textureID = CreateTexture(imgData.image);
             if (imgData.textureID != 0) {
                 imgData.textureLoaded = true;
-                std::cout << "[DEBUG] Texture loaded successfully with ID: " << imgData.textureID << std::endl;
+                LOG_TEXTURE_DEBUG(imgData.textureID, "Texture loaded successfully");
             } else {
-                std::cerr << "[ERROR] Failed to create texture for: " << imgData.filename << std::endl;
+                LOG_ERROR("Failed to create texture for: " + imgData.filename);
                 imgData.image.release(); // Free memory if texture creation failed
             }
         } catch (const cv::Exception& e) {
-            std::cerr << "[ERROR] OpenCV exception loading image: " << e.what() << std::endl;
+            LOG_ERROR("OpenCV exception loading image: " + std::string(e.what()));
             imgData.image.release();
         } catch (const std::exception& e) {
-            std::cerr << "[ERROR] Standard exception loading image: " << e.what() << std::endl;
+            LOG_ERROR("Standard exception loading image: " + std::string(e.what()));
             imgData.image.release();
         } catch (...) {
-            std::cerr << "[ERROR] Unknown exception loading image: " << imgData.filepath << std::endl;
+            LOG_ERROR("Unknown exception loading image: " + imgData.filepath);
             imgData.image.release();
         }
     }    // Load thumbnail texture
     void LoadThumbnailTexture(ImageData& imgData) {
-        std::cout << "[DEBUG] LoadThumbnailTexture called for: " << imgData.filename << std::endl;
+        LOG_DEBUG("LoadThumbnailTexture called for: " + imgData.filename);
         
         if (imgData.thumbnailLoaded) {
-            std::cout << "[DEBUG] Thumbnail already loaded, skipping" << std::endl;
+            LOG_DEBUG("Thumbnail already loaded, skipping");
             return;
         }
         
         try {
             if (imgData.image.empty()) {
-                std::cout << "[DEBUG] Main image not loaded, loading for thumbnail" << std::endl;
+                LOG_DEBUG("Main image not loaded, loading for thumbnail");
                 
                 if (!fs::exists(imgData.filepath)) {
-                    std::cerr << "[ERROR] File does not exist for thumbnail: " << imgData.filepath << std::endl;
+                    LOG_ERROR("File does not exist for thumbnail: " + imgData.filepath);
                     return;
                 }
                 
                 imgData.image = cv::imread(imgData.filepath, cv::IMREAD_COLOR);
                 if (imgData.image.empty()) {
-                    std::cerr << "[ERROR] Cannot load image for thumbnail: " << imgData.filepath << std::endl;
+                    LOG_ERROR("Cannot load image for thumbnail: " + imgData.filepath);
                     return;
                 }
-                std::cout << "[DEBUG] Image loaded for thumbnail: " << imgData.image.cols << "x" << imgData.image.rows << std::endl;
+                LOG_OPENCV_DEBUG(imgData.image, "Image loaded for thumbnail");
             }
             
             imgData.thumbnail = CreateThumbnail(imgData.image);
             if (imgData.thumbnail.empty()) {
-                std::cerr << "[ERROR] Failed to create thumbnail for: " << imgData.filename << std::endl;
+                LOG_ERROR("Failed to create thumbnail for: " + imgData.filename);
                 return;
             }
             
@@ -477,23 +561,23 @@ private:
             float thumbHeight = static_cast<float>(imgData.thumbnail.rows);
             imgData.thumbnailDisplaySize = ImVec2(thumbWidth, thumbHeight);
             
-            std::cout << "[DEBUG] Thumbnail display size: " << thumbWidth << "x" << thumbHeight << std::endl;
+            LOG_DEBUG("Thumbnail display size: " + std::to_string(thumbWidth) + "x" + std::to_string(thumbHeight));
             
             imgData.thumbnailTextureID = CreateTexture(imgData.thumbnail);
             if (imgData.thumbnailTextureID != 0) {
                 imgData.thumbnailLoaded = true;
-                std::cout << "[DEBUG] Thumbnail texture created successfully with ID: " << imgData.thumbnailTextureID << std::endl;
+                LOG_TEXTURE_DEBUG(imgData.thumbnailTextureID, "Thumbnail texture created successfully");
             } else {
-                std::cerr << "[ERROR] Failed to create thumbnail texture for: " << imgData.filename << std::endl;
+                LOG_ERROR("Failed to create thumbnail texture for: " + imgData.filename);
                 imgData.thumbnail.release();
             }
         } catch (const cv::Exception& e) {
-            std::cerr << "[ERROR] OpenCV exception creating thumbnail: " << e.what() << std::endl;
+            LOG_ERROR("OpenCV exception creating thumbnail: " + std::string(e.what()));
             imgData.thumbnail.release();
         } catch (const std::exception& e) {
-            std::cerr << "[ERROR] Standard exception creating thumbnail: " << e.what() << std::endl;
+            LOG_ERROR("Standard exception creating thumbnail: " + std::string(e.what()));
             imgData.thumbnail.release();
-        } catch (...) {            std::cerr << "[ERROR] Unknown exception creating thumbnail for: " << imgData.filename << std::endl;
+        } catch (...) {            LOG_ERROR("Unknown exception creating thumbnail for: " + imgData.filename);
             imgData.thumbnail.release();
         }
     }
@@ -508,15 +592,15 @@ public:
             if (img.thumbnailLoaded) glDeleteTextures(1, &img.thumbnailTextureID);
         }
     }    bool Initialize() {
-        std::cout << "Initializing GLFW..." << std::endl;
+        LOG_INFO("Initializing GLFW...");
         
         // Initialize GLFW
         if (!glfwInit()) {
-            std::cerr << "Failed to initialize GLFW" << std::endl;
+            LOG_ERROR("Failed to initialize GLFW");
             return false;
         }
 
-        std::cout << "Setting OpenGL hints..." << std::endl;
+        LOG_DEBUG("Setting OpenGL hints...");
         
         // Set OpenGL version - try more compatible settings
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -524,26 +608,26 @@ public:
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
-        std::cout << "Creating window..." << std::endl;
+        LOG_DEBUG("Creating window...");
         
         // Create windowed mode first (easier to debug)
         window = glfwCreateWindow(1200, 800, "Image Viewer", nullptr, nullptr);
         if (!window) {
-            std::cerr << "Failed to create window" << std::endl;
+            LOG_ERROR("Failed to create window");
             const char* description;
             int code = glfwGetError(&description);
             if (description) {
-                std::cerr << "GLFW Error: " << code << " - " << description << std::endl;
+                LOG_ERROR("GLFW Error: " + std::to_string(code) + " - " + std::string(description));
             }
             glfwTerminate();
             return false;
         }
 
-        std::cout << "Making context current..." << std::endl;
+        LOG_DEBUG("Making context current...");
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1); // Vertical sync
 
-        std::cout << "Initializing ImGui..." << std::endl;
+        LOG_DEBUG("Initializing ImGui...");
         
         // Initialize ImGui
         IMGUI_CHECKVERSION();
@@ -554,27 +638,26 @@ public:
         // Set ImGui style
         ImGui::StyleColorsDark();
 
-        std::cout << "Initializing ImGui backends..." << std::endl;
+        LOG_DEBUG("Initializing ImGui backends...");
         
         // Initialize ImGui backends
         if (!ImGui_ImplGlfw_InitForOpenGL(window, true)) {
-            std::cerr << "Failed to initialize ImGui GLFW backend" << std::endl;
+            LOG_ERROR("Failed to initialize ImGui GLFW backend");
             return false;
         }
         
         if (!ImGui_ImplOpenGL3_Init("#version 330")) {
-            std::cerr << "Failed to initialize ImGui OpenGL3 backend" << std::endl;
+            LOG_ERROR("Failed to initialize ImGui OpenGL3 backend");
             return false;
         }
 
-        std::cout << "Loading image list..." << std::endl;
+        LOG_DEBUG("Loading image list...");
         
         // Load image list
-        LoadImageList();        std::cout << "Initialization complete!" << std::endl;
+        LoadImageList();        LOG_INFO("Initialization complete!");
         return true;
-    }
-      void Run() {
-        std::cout << "Starting main loop..." << std::endl;
+    }      void Run() {
+        LOG_INFO("Starting main loop...");
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
             
@@ -611,7 +694,7 @@ public:
                 // Load thumbnail
                 if (!img.thumbnailLoaded) {
                     LoadThumbnailTexture(img);
-                }                if (img.thumbnailLoaded) {
+                }if (img.thumbnailLoaded) {
                     // Display thumbnail with proper aspect ratio
                     char buttonId[64];
                     snprintf(buttonId, sizeof(buttonId), "thumbnail_%d", i);
@@ -660,12 +743,11 @@ public:
                                 IM_COL32_WHITE  // Tint color
                             );
                         }
-                        
-                        // Handle click
+                          // Handle click
                         if (clicked) {
                             selectedImageIndex = i;
-                            std::cout << "[DEBUG] Selected image: " << img.filename << std::endl;
-                        }                        // Highlight selection with border around the container
+                            LOG_DEBUG("Selected image: " + img.filename);
+                        }// Highlight selection with border around the container
                         if (selectedImageIndex == i) {
                             ImVec2 rectMin = ImVec2(
                                 windowPos.x + windowContentMin.x + cursorPos.x,
@@ -677,11 +759,10 @@ public:
                         }
                         
                     } catch (const std::exception& e) {
-                        std::cerr << "[ERROR] Exception displaying thumbnail for " << img.filename << ": " << e.what() << std::endl;
-                        // Display error placeholder
+                        LOG_ERROR("Exception displaying thumbnail for " + img.filename + ": " + std::string(e.what()));                    // Display error placeholder
                         ImGui::Button("ERROR", ImVec2(thumbnailSize, thumbnailSize));
                     } catch (...) {
-                        std::cerr << "[ERROR] Unknown exception displaying thumbnail for " << img.filename << std::endl;
+                        LOG_ERROR("Unknown exception displaying thumbnail for " + img.filename);
                         // Display error placeholder
                         ImGui::Button("ERROR", ImVec2(thumbnailSize, thumbnailSize));
                     }
@@ -690,7 +771,7 @@ public:
                     ImGui::Button("Loading...", ImVec2(thumbnailSize, thumbnailSize));
                     if (ImGui::IsItemClicked()) {
                         selectedImageIndex = i;
-                        std::cout << "[DEBUG] Selected loading image: " << img.filename << std::endl;
+                        LOG_DEBUG("Selected loading image: " + img.filename);
                     }
                 }
                 
@@ -708,11 +789,11 @@ public:
             
             if (selectedImageIndex >= 0 && selectedImageIndex < images.size()) {
                 auto& selectedImg = images[selectedImageIndex];
-                std::cout << "[DEBUG] Displaying selected image: " << selectedImg.filename << std::endl;
+                LOG_DEBUG("Displaying selected image: " + selectedImg.filename);
                 
                 // Load full image
                 if (!selectedImg.textureLoaded) {
-                    std::cout << "[DEBUG] Loading texture for selected image" << std::endl;
+                    LOG_DEBUG("Loading texture for selected image");
                     LoadImageTexture(selectedImg);
                 }
                 
@@ -734,7 +815,7 @@ public:
                         
                         // Validate image size
                         if (imageSize.x <= 0 || imageSize.y <= 0) {
-                            std::cerr << "[ERROR] Invalid display size: " << imageSize.x << "x" << imageSize.y << std::endl;
+                            LOG_ERROR("Invalid display size: " + std::to_string(imageSize.x) + "x" + std::to_string(imageSize.y));
                             ImGui::Text("Error: Invalid image dimensions");
                         } else {
                             // Center display
@@ -745,7 +826,7 @@ public:
                             ));
                             
                             ImGui::Image(reinterpret_cast<void*>(selectedImg.textureID), imageSize);
-                            std::cout << "[DEBUG] Image displayed successfully" << std::endl;
+                            LOG_DEBUG("Image displayed successfully");
                         }
                         
                         // Display image info
@@ -755,19 +836,18 @@ public:
                         ImGui::Text("Channels: %d", selectedImg.image.channels());
                         ImGui::Text("Texture ID: %u", selectedImg.textureID);
                         
-                    } catch (const std::exception& e) {
-                        std::cerr << "[ERROR] Exception displaying main image: " << e.what() << std::endl;
+                    } catch (const std::exception& e) {                        LOG_ERROR("Exception displaying main image: " + std::string(e.what()));
                         ImGui::Text("Error displaying image: %s", e.what());
                     } catch (...) {
-                        std::cerr << "[ERROR] Unknown exception displaying main image" << std::endl;
+                        LOG_ERROR("Unknown exception displaying main image");
                         ImGui::Text("Unknown error displaying image");
                     }
                 } else if (!selectedImg.textureLoaded) {
                     ImGui::Text("Loading image...");
-                    std::cout << "[DEBUG] Image still loading..." << std::endl;
+                    LOG_DEBUG("Image still loading...");
                 } else {
                     ImGui::Text("Failed to load image: %s", selectedImg.filename.c_str());
-                    std::cerr << "[ERROR] Failed to load image: " << selectedImg.filename << std::endl;
+                    LOG_ERROR("Failed to load image: " + selectedImg.filename);
                 }
             } else {
                 // Display prompt
@@ -819,20 +899,20 @@ int main() {
     freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
     #endif
     
-    cout<< "Image Viewer Application" << endl;
+    LOG_INFO("Image Viewer Application Started");
     ImageViewer viewer;
-    cout<< "debug point1" << endl;
+    LOG_DEBUG("debug point1");
     
     if (!viewer.Initialize()) {
-        std::cerr << "Initialization failed" << std::endl;
+        LOG_ERROR("Initialization failed");
         return -1;
     }
     
-    cout<< "debug point2" << endl;
+    LOG_DEBUG("debug point2");
     viewer.Run();
-    cout<< "debug point3" << endl;
+    LOG_DEBUG("debug point3");
     viewer.Cleanup();
-    cout<< "debug point4" << endl;
+    LOG_DEBUG("debug point4");
     
     return 0;
 }
