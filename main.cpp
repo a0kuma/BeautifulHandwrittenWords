@@ -546,6 +546,11 @@ int main()
     static bool show_clusters_window = false;
     static std::vector<std::vector<int>> clusters;
     static int selected_cluster = -1;
+    static std::vector<cv::Point> nonZeroPoints;
+    static GLuint cluster_texture = 0;
+    static int cluster_image_width = 0;
+    static int cluster_image_height = 0;
+    static bool show_cluster_image_window = false;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -574,7 +579,7 @@ int main()
 
                     cv::bitwise_not(gray_image, gray_image);
 
-                    vector<cv::Point> nonZeroPoints;
+                    nonZeroPoints.clear();
                     cv::findNonZero(gray_image, nonZeroPoints);
 
                     size_t non_zero_count = nonZeroPoints.size();
@@ -625,7 +630,65 @@ int main()
                 if (ImGui::Selectable(oss.str().c_str(), selected_cluster == static_cast<int>(i)))
                 {
                     selected_cluster = static_cast<int>(i);
+                    show_cluster_image_window = true;
+
+                    if (selected_cluster != -1 && !clusters.empty() && !nonZeroPoints.empty())
+                    {
+                        cv::Mat cluster_display;
+                        if (!image.empty())
+                        {
+                            cluster_display = image.clone(); // Work on a copy
+                        }
+                        else
+                        {
+                            cluster_display = cv::Mat::zeros(480, 640, CV_8UC3); // Fallback
+                        }
+
+                        // Draw points from the selected cluster
+                        const auto &cluster_indices = clusters[selected_cluster];
+                        for (int point_idx : cluster_indices)
+                        {
+                            if (point_idx < nonZeroPoints.size())
+                            {
+                                cv::Point p = nonZeroPoints[point_idx];
+                                // Draw a red circle. The global `image` is RGB, so red is (255, 0, 0).
+                                cv::circle(cluster_display, p, 2, cv::Scalar(255, 0, 0), -1);
+                            }
+                        }
+
+                        // Create/update OpenGL texture for display
+                        if (cluster_texture != 0)
+                        {
+                            glDeleteTextures(1, &cluster_texture);
+                        }
+                        glGenTextures(1, &cluster_texture);
+                        glBindTexture(GL_TEXTURE_2D, cluster_texture);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cluster_display.cols, cluster_display.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, cluster_display.data);
+
+                        cluster_image_width = cluster_display.cols;
+                        cluster_image_height = cluster_display.rows;
+                    }
                 }
+            }
+            ImGui::End();
+        }
+
+        if (show_cluster_image_window)
+        {
+            ImGui::Begin("Cluster Visualization", &show_cluster_image_window);
+            if (cluster_texture != 0)
+            {
+                ImGui::Text("Cluster %d with %zu points", selected_cluster, clusters[selected_cluster].size());
+                ImGui::Image((void *)(intptr_t)cluster_texture, ImVec2((float)cluster_image_width, (float)cluster_image_height));
+            }
+            else
+            {
+                ImGui::Text("Could not generate cluster image.");
             }
             ImGui::End();
         }
@@ -891,6 +954,8 @@ int main()
     // Cleanup
     if (image_texture != 0)
         glDeleteTextures(1, &image_texture);
+    if (cluster_texture != 0)
+        glDeleteTextures(1, &cluster_texture);
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
