@@ -35,6 +35,7 @@ static int color_space = 0; // 0=RGB, 1=HSL, 2=HSV
 static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f};
 static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};
 static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};
+cv::Mat image;
 
 // Function to load and process image with OpenCV effects
 bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height,
@@ -43,7 +44,9 @@ bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int
                                   float rgb_threshold[3] = nullptr, float hsl_threshold[3] = nullptr, float hsv_threshold[3] = nullptr)
 {
     // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
-    cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
+    //TODO:RM
+    //cv::Mat 
+    image = cv::imread(filename, cv::IMREAD_COLOR);
     if (image.empty())
     {
         cerr << "Failed to load image for processing: " << filename << endl;

@@ -24,7 +24,7 @@ events:
       The output was:
       0
       .NET Framework ??MSBuild ? 17.12.12+1cce77968
-      撌脩???撱箇蔭??2025/6/20 銝? 02:59:37??
+      撌脩???撱箇蔭??2025/6/20 銝? 03:02:42??
       
       蝭\xc2\x80暺?1 (?身?格?) 銝?撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\3.31.0-rc2\\CompilerIdC\\CompilerIdC.vcxproj"??
       PrepareForBuild:
@@ -58,7 +58,7 @@ events:
           0 ?郎??
           0 ?隤?
       
-      蝬??? 00:00:00.78
+      蝬??? 00:00:00.79
       
       
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
@@ -84,7 +84,7 @@ events:
       The output was:
       0
       .NET Framework ??MSBuild ? 17.12.12+1cce77968
-      撌脩???撱箇蔭??2025/6/20 銝? 02:59:38??
+      撌脩???撱箇蔭??2025/6/20 銝? 03:02:43??
       
       蝭\xc2\x80暺?1 (?身?格?) 銝?撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\3.31.0-rc2\\CompilerIdCXX\\CompilerIdCXX.vcxproj"??
       PrepareForBuild:
@@ -118,7 +118,7 @@ events:
           0 ?郎??
           0 ?隤?
       
-      蝬??? 00:00:00.76
+      蝬??? 00:00:00.78
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -137,8 +137,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-ujnyc2"
-      binary: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-ujnyc2"
+      source: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-flm6cs"
+      binary: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-flm6cs"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
       CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -147,45 +147,45 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-ujnyc2'
+        Change Dir: 'C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-flm6cs'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_d8179.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_26178.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         .NET Framework ??MSBuild ? 17.12.12+1cce77968
-        撌脩???撱箇蔭??2025/6/20 銝? 02:59:39??
+        撌脩???撱箇蔭??2025/6/20 銝? 03:02:44??
         
-        蝭\xc2\x80暺?1 (?身?格?) 銝?撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ujnyc2\\cmTC_d8179.vcxproj"??
+        蝭\xc2\x80暺?1 (?身?格?) 銝?撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-flm6cs\\cmTC_26178.vcxproj"??
         PrepareForBuild:
-          甇?撱箇??桅? "cmTC_d8179.dir\\Debug\\"??
+          甇?撱箇??桅? "cmTC_26178.dir\\Debug\\"??
           蝯??撓?箏歇??楊霅臬閮箸?撘?撠??隤日?撅扎\xc2\x80??\xc2\x80閰喟敦鞈?嚗?? https://aka.ms/cpp/structured-output??
-          甇?撱箇??桅? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ujnyc2\\Debug\\"??
-          甇?撱箇??桅? "cmTC_d8179.dir\\Debug\\cmTC_d8179.tlog\\"??
+          甇?撱箇??桅? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-flm6cs\\Debug\\"??
+          甇?撱箇??桅? "cmTC_26178.dir\\Debug\\cmTC_26178.tlog\\"??
         InitializeBuildStatus:
-          ?望??鈭?"AlwaysCreate"嚗?甇斗迤?典遣蝡?"cmTC_d8179.dir\\Debug\\cmTC_d8179.tlog\\unsuccessfulbuild"??
-          甇?霈???唾? "cmTC_d8179.dir\\Debug\\cmTC_d8179.tlog\\unsuccessfulbuild"??
+          ?望??鈭?"AlwaysCreate"嚗?甇斗迤?典遣蝡?"cmTC_26178.dir\\Debug\\cmTC_26178.tlog\\unsuccessfulbuild"??
+          甇?霈???唾? "cmTC_26178.dir\\Debug\\cmTC_26178.tlog\\unsuccessfulbuild"??
         VcpkgTripletSelection:
           Using triplet "x64-windows" from "C:\\vcpkg\\installed\\x64-windows\\"
           Using normalized configuration "Debug"
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_d8179.dir\\Debug\\\\" /Fd"cmTC_d8179.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_26178.dir\\Debug\\\\" /Fd"cmTC_26178.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34438 for x64
           Copyright (C) Microsoft Corporation.  ??甈???銝虫??????押\xc2\x80?
-          cl /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_d8179.dir\\Debug\\\\" /Fd"cmTC_d8179.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+          cl /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_26178.dir\\Debug\\\\" /Fd"cmTC_26178.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
           CMakeCCompilerABI.c
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ujnyc2\\Debug\\cmTC_d8179.exe" /INCREMENTAL /ILK:"cmTC_d8179.dir\\Debug\\cmTC_d8179.ilk" /NOLOGO /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-ujnyc2/Debug/cmTC_d8179.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-ujnyc2/Debug/cmTC_d8179.lib" /MACHINE:X64  /machine:x64 cmTC_d8179.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_d8179.vcxproj -> C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ujnyc2\\Debug\\cmTC_d8179.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-flm6cs\\Debug\\cmTC_26178.exe" /INCREMENTAL /ILK:"cmTC_26178.dir\\Debug\\cmTC_26178.ilk" /NOLOGO /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-flm6cs/Debug/cmTC_26178.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-flm6cs/Debug/cmTC_26178.lib" /MACHINE:X64  /machine:x64 cmTC_26178.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_26178.vcxproj -> C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-flm6cs\\Debug\\cmTC_26178.exe
         AppLocalFromInstalled:
-          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ujnyc2\\Debug\\cmTC_d8179.exe" "C:\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_d8179.dir\\Debug\\cmTC_d8179.tlog\\cmTC_d8179.write.1u.tlog" "cmTC_d8179.dir\\Debug\\vcpkg.applocal.log"
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-flm6cs\\Debug\\cmTC_26178.exe" "C:\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_26178.dir\\Debug\\cmTC_26178.tlog\\cmTC_26178.write.1u.tlog" "cmTC_26178.dir\\Debug\\vcpkg.applocal.log"
         FinalizeBuildStatus:
-          甇??芷瑼? "cmTC_d8179.dir\\Debug\\cmTC_d8179.tlog\\unsuccessfulbuild"??
-          甇?霈???唾? "cmTC_d8179.dir\\Debug\\cmTC_d8179.tlog\\cmTC_d8179.lastbuildstate"??
-        撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ujnyc2\\cmTC_d8179.vcxproj" (?身?格?) 撱箇蔭摰???
+          甇??芷瑼? "cmTC_26178.dir\\Debug\\cmTC_26178.tlog\\unsuccessfulbuild"??
+          甇?霈???唾? "cmTC_26178.dir\\Debug\\cmTC_26178.tlog\\cmTC_26178.lastbuildstate"??
+        撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-flm6cs\\cmTC_26178.vcxproj" (?身?格?) 撱箇蔭摰???
         
         撱箇蔭????
             0 ?郎??
             0 ?隤?
         
-        蝬??? 00:00:00.78
+        蝬??? 00:00:00.76
         
       exitCode: 0
   -
@@ -225,8 +225,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-5ov9xd"
-      binary: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-5ov9xd"
+      source: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-hvsp68"
+      binary: "C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-hvsp68"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -236,45 +236,45 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-5ov9xd'
+        Change Dir: 'C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-hvsp68'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8b718.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_63c3e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         .NET Framework ??MSBuild ? 17.12.12+1cce77968
-        撌脩???撱箇蔭??2025/6/20 銝? 02:59:40??
+        撌脩???撱箇蔭??2025/6/20 銝? 03:02:45??
         
-        蝭\xc2\x80暺?1 (?身?格?) 銝?撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5ov9xd\\cmTC_8b718.vcxproj"??
+        蝭\xc2\x80暺?1 (?身?格?) 銝?撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hvsp68\\cmTC_63c3e.vcxproj"??
         PrepareForBuild:
-          甇?撱箇??桅? "cmTC_8b718.dir\\Debug\\"??
+          甇?撱箇??桅? "cmTC_63c3e.dir\\Debug\\"??
           蝯??撓?箏歇??楊霅臬閮箸?撘?撠??隤日?撅扎\xc2\x80??\xc2\x80閰喟敦鞈?嚗?? https://aka.ms/cpp/structured-output??
-          甇?撱箇??桅? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5ov9xd\\Debug\\"??
-          甇?撱箇??桅? "cmTC_8b718.dir\\Debug\\cmTC_8b718.tlog\\"??
+          甇?撱箇??桅? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hvsp68\\Debug\\"??
+          甇?撱箇??桅? "cmTC_63c3e.dir\\Debug\\cmTC_63c3e.tlog\\"??
         InitializeBuildStatus:
-          ?望??鈭?"AlwaysCreate"嚗?甇斗迤?典遣蝡?"cmTC_8b718.dir\\Debug\\cmTC_8b718.tlog\\unsuccessfulbuild"??
-          甇?霈???唾? "cmTC_8b718.dir\\Debug\\cmTC_8b718.tlog\\unsuccessfulbuild"??
+          ?望??鈭?"AlwaysCreate"嚗?甇斗迤?典遣蝡?"cmTC_63c3e.dir\\Debug\\cmTC_63c3e.tlog\\unsuccessfulbuild"??
+          甇?霈???唾? "cmTC_63c3e.dir\\Debug\\cmTC_63c3e.tlog\\unsuccessfulbuild"??
         VcpkgTripletSelection:
           Using triplet "x64-windows" from "C:\\vcpkg\\installed\\x64-windows\\"
           Using normalized configuration "Debug"
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8b718.dir\\Debug\\\\" /Fd"cmTC_8b718.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_63c3e.dir\\Debug\\\\" /Fd"cmTC_63c3e.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34438 for x64
           Copyright (C) Microsoft Corporation.  ??甈???銝虫??????押\xc2\x80?
-          cl /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8b718.dir\\Debug\\\\" /Fd"cmTC_8b718.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /I"C:\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_63c3e.dir\\Debug\\\\" /Fd"cmTC_63c3e.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5ov9xd\\Debug\\cmTC_8b718.exe" /INCREMENTAL /ILK:"cmTC_8b718.dir\\Debug\\cmTC_8b718.ilk" /NOLOGO /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-5ov9xd/Debug/cmTC_8b718.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-5ov9xd/Debug/cmTC_8b718.lib" /MACHINE:X64  /machine:x64 cmTC_8b718.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_8b718.vcxproj -> C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5ov9xd\\Debug\\cmTC_8b718.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hvsp68\\Debug\\cmTC_63c3e.exe" /INCREMENTAL /ILK:"cmTC_63c3e.dir\\Debug\\cmTC_63c3e.ilk" /NOLOGO /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-hvsp68/Debug/cmTC_63c3e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/ai/Documents/andy/code/learnPP/build/CMakeFiles/CMakeScratch/TryCompile-hvsp68/Debug/cmTC_63c3e.lib" /MACHINE:X64  /machine:x64 cmTC_63c3e.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_63c3e.vcxproj -> C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hvsp68\\Debug\\cmTC_63c3e.exe
         AppLocalFromInstalled:
-          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5ov9xd\\Debug\\cmTC_8b718.exe" "C:\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_8b718.dir\\Debug\\cmTC_8b718.tlog\\cmTC_8b718.write.1u.tlog" "cmTC_8b718.dir\\Debug\\vcpkg.applocal.log"
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hvsp68\\Debug\\cmTC_63c3e.exe" "C:\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_63c3e.dir\\Debug\\cmTC_63c3e.tlog\\cmTC_63c3e.write.1u.tlog" "cmTC_63c3e.dir\\Debug\\vcpkg.applocal.log"
         FinalizeBuildStatus:
-          甇??芷瑼? "cmTC_8b718.dir\\Debug\\cmTC_8b718.tlog\\unsuccessfulbuild"??
-          甇?霈???唾? "cmTC_8b718.dir\\Debug\\cmTC_8b718.tlog\\cmTC_8b718.lastbuildstate"??
-        撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5ov9xd\\cmTC_8b718.vcxproj" (?身?格?) 撱箇蔭摰???
+          甇??芷瑼? "cmTC_63c3e.dir\\Debug\\cmTC_63c3e.tlog\\unsuccessfulbuild"??
+          甇?霈???唾? "cmTC_63c3e.dir\\Debug\\cmTC_63c3e.tlog\\cmTC_63c3e.lastbuildstate"??
+        撠? "C:\\Users\\ai\\Documents\\andy\\code\\learnPP\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hvsp68\\cmTC_63c3e.vcxproj" (?身?格?) 撱箇蔭摰???
         
         撱箇蔭????
             0 ?郎??
             0 ?隤?
         
-        蝬??? 00:00:00.79
+        蝬??? 00:00:00.77
         
       exitCode: 0
   -
