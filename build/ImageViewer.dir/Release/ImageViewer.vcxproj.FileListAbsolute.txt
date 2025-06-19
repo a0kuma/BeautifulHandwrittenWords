@@ -1,2 +1,0 @@
-C:\Users\ai\Documents\andy\code\learnPP\build\Release\glfw3.dll
-C:\Users\ai\Documents\andy\code\learnPP\build\ImageViewer.dir\Release\ImageVie.C3B33E7E.Up2Date

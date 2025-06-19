@@ -36,6 +36,12 @@ set(GLFW_INCLUDE_DIRS "${GLFW_DIR}/include")
 set(GLFW_LIBRARIES_RELEASE "${GLFW_DIR}/lib/glfw3dll.lib")
 set(GLFW_LIBRARIES_DEBUG "${GLFW_DIR}/debug/lib/glfw3dll.lib")
 
+# GLEW 路徑設置
+set(GLEW_DIR "${VCPKG_PACKAGES}/glew_x64-windows")
+set(GLEW_INCLUDE_DIRS "${GLEW_DIR}/include")
+set(GLEW_LIBRARIES_RELEASE "${GLEW_DIR}/lib/glew32.lib")
+set(GLEW_LIBRARIES_DEBUG "${GLEW_DIR}/debug/lib/glew32d.lib")
+
 # OpenGL 路徑設置
 set(OPENGL_DIR "${VCPKG_PACKAGES}/opengl_x64-windows")
 set(OPENGL_INCLUDE_DIRS "${OPENGL_DIR}/include")
@@ -65,6 +71,7 @@ target_include_directories(ImageViewer PRIVATE
     ${IMGUI_DIR}/backends
     ${OpenCV_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
+    ${GLEW_INCLUDE_DIRS}
     ${OPENGL_INCLUDE_DIRS}
 )
 
@@ -74,6 +81,8 @@ target_link_libraries(ImageViewer
     $<$<CONFIG:Release>:${OpenCV_LIBS_RELEASE}>
     $<$<CONFIG:Debug>:${GLFW_LIBRARIES_DEBUG}>
     $<$<CONFIG:Release>:${GLFW_LIBRARIES_RELEASE}>
+    $<$<CONFIG:Debug>:${GLEW_LIBRARIES_DEBUG}>
+    $<$<CONFIG:Release>:${GLEW_LIBRARIES_RELEASE}>
     ${OPENGL_LIBRARIES}
 )
 

@@ -1,6 +1,6 @@
 /**
- * !important!
- * cd build; cmake .. -G "Visual Studio 17 2022" -A x64 ; cmake --build . --config Release; .\Release\ImageViewer.exe
+ * !important! how to compile and run
+ * rm build -r -fo; mkdir build; cd build; cmake .. -G "Visual Studio 17 2022" -A x64 ; cmake --build . --config Release; .\Release\ImageViewer.exe; cd ..
  */
 
 #include <iostream>//do not remove
@@ -20,11 +20,11 @@
 #endif
 
 #include <opencv2/opencv.hpp>//do not remove
+#include <GL/glew.h>//do not remove - must be included before other OpenGL headers
 #include <imgui.h>//do not remove
 #include <imgui_impl_glfw.h>//do not remove
 #include <imgui_impl_opengl3.h>//do not remove
 #include <GLFW/glfw3.h>//do not remove
-#include <GL/gl.h>//do not remove
 
 using namespace std;//do not remove
 
@@ -47,9 +47,16 @@ int main()
         cerr << "Failed to create GLFW window" << endl;
         glfwTerminate();
         return -1;
-    }
-    glfwMakeContextCurrent(window);
+    }    glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
+    // Initialize GLEW
+    if (glewInit() != GLEW_OK) {
+        cerr << "Failed to initialize GLEW" << endl;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
+    }
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -67,11 +74,17 @@ int main()
     bool show_demo_window = true;
     bool show_another_window = false;
     bool show_directory_window = true;
+    bool show_opencv_window = true;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    // OpenCV image state
+    cv::Mat opencv_image = cv::Mat::zeros(48, 48, CV_8UC3);
+    opencv_image.setTo(cv::Scalar(139, 185, 221)); // BGR format for #ddb98b
+    GLuint image_texture = 0;
 
     // Directory listing state
     vector<string> directory_entries;
-    string current_path = ".";
+    string current_path = "../impool";
     
     // Function to refresh directory listing
     auto refresh_directory = [&]() {
@@ -90,9 +103,31 @@ int main()
             directory_entries.push_back("Error reading directory: " + string(ex.what()));
         }
     };
-    
-    // Initial directory load
+      // Initial directory load
     refresh_directory();
+
+    // Function to create OpenGL texture from OpenCV Mat
+    auto create_texture_from_mat = [](const cv::Mat& mat) -> GLuint {
+        GLuint texture_id;
+        glGenTextures(1, &texture_id);
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        
+        // Convert BGR to RGB for OpenGL
+        cv::Mat rgb_mat;
+        cv::cvtColor(mat, rgb_mat, cv::COLOR_BGR2RGB);
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rgb_mat.cols, rgb_mat.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb_mat.data);
+        
+        return texture_id;
+    };
+    
+    // Create texture from the OpenCV image
+    image_texture = create_texture_from_mat(opencv_image);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -114,10 +149,10 @@ int main()
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
             ImGui::Checkbox("Directory Window", &show_directory_window);
+            ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
@@ -137,9 +172,7 @@ int main()
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
             ImGui::End();
-        }
-
-        // 4. Show directory listing window
+        }        // 4. Show directory listing window
         if (show_directory_window)
         {
             ImGui::Begin("Directory Listing", &show_directory_window);
@@ -166,6 +199,34 @@ int main()
             ImGui::End();
         }
 
+        // 5. Show OpenCV image window
+        if (show_opencv_window)
+        {
+            ImGui::Begin("OpenCV Image", &show_opencv_window);
+            
+            ImGui::Text("OpenCV Image (48x48, RGB #ddb98b)");
+            ImGui::Separator();
+            
+            // Display the image
+            if (image_texture != 0)
+            {
+                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(48, 48));
+                
+                // Also show a scaled up version for better visibility
+                ImGui::Text("Scaled up version:");
+                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(192, 192));
+            }
+            else
+            {
+                ImGui::Text("Failed to load image texture");
+            }
+            
+            ImGui::Text("Image size: %dx%d", opencv_image.cols, opencv_image.rows);
+            ImGui::Text("Image channels: %d", opencv_image.channels());
+            
+            ImGui::End();
+        }
+
         // Rendering
         ImGui::Render();
         int display_w, display_h;
@@ -176,9 +237,10 @@ int main()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
-    }
-
-    // Cleanup
+    }    // Cleanup
+    if (image_texture != 0)
+        glDeleteTextures(1, &image_texture);
+    
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
