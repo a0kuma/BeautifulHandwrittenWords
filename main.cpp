@@ -3,37 +3,38 @@
  * rm build -r -fo; mkdir build; cd build; cmake .. -G "Visual Studio 17 2022" -A x64 ; cmake --build . --config Release; .\Release\ImageViewer.exe; cd ..
  */
 
-#include <iostream>//do not remove
-#include <vector>//do not remove
-#include <string>//do not remove
-#include <filesystem>//do not remove
-#include <algorithm>//do not remove
-#include <memory>//do not remove
-#include <cstdio>//do not remove
-#include <sstream>//do not remove
-#include <iomanip>//do not remove
+#include <iostream>   //do not remove
+#include <vector>     //do not remove
+#include <string>     //do not remove
+#include <filesystem> //do not remove
+#include <algorithm>  //do not remove
+#include <memory>     //do not remove
+#include <cstdio>     //do not remove
+#include <sstream>    //do not remove
+#include <iomanip>    //do not remove
 
 #ifdef _WIN32
-#include <windows.h>//do not remove
-#include <io.h>//do not remove
-#include <fcntl.h>//do not remove
+#include <windows.h> //do not remove
+#include <io.h>      //do not remove
+#include <fcntl.h>   //do not remove
 #endif
 
-#include <opencv2/opencv.hpp>//do not remove
-#include <GL/glew.h>//do not remove - must be included before other OpenGL headers
-#include <imgui.h>//do not remove
-#include <imgui_impl_glfw.h>//do not remove
-#include <imgui_impl_opengl3.h>//do not remove
-#include <GLFW/glfw3.h>//do not remove
+#include <opencv2/opencv.hpp>   //do not remove
+#include <GL/glew.h>            //do not remove - must be included before other OpenGL headers
+#include <imgui.h>              //do not remove
+#include <imgui_impl_glfw.h>    //do not remove
+#include <imgui_impl_opengl3.h> //do not remove
+#include <GLFW/glfw3.h>         //do not remove
 
-using namespace std;//do not remove
+using namespace std; // do not remove
 
 // Simple helper function to load an image into a OpenGL texture using OpenCV
-bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height)
+bool LoadTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height)
 {
     // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
     cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
-    if (image.empty()) {
+    if (image.empty())
+    {
         cerr << "Failed to load image: " << filename << endl;
         return false;
     }
@@ -45,20 +46,26 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
     cout << "  Type: " << image.type() << " (should be " << CV_8UC3 << " for 8-bit 3-channel)" << endl;
 
     // Ensure image is 3-channel BGR
-    if (image.channels() != 3) {
-        if (image.channels() == 4) {
+    if (image.channels() != 3)
+    {
+        if (image.channels() == 4)
+        {
             cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
             cout << "  Converted from 4-channel to 3-channel" << endl;
-        } else if (image.channels() == 1) {
+        }
+        else if (image.channels() == 1)
+        {
             cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
-            cout << "  Converted from grayscale to 3-channel" << endl;        }
+            cout << "  Converted from grayscale to 3-channel" << endl;
+        }
     }
 
     // Convert BGR to RGB (OpenCV uses BGR by default)
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
 
     // Ensure continuous memory layout
-    if (!image.isContinuous()) {
+    if (!image.isContinuous())
+    {
         image = image.clone();
     }
 
@@ -78,13 +85,14 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-    
+
     // Upload as RGB 3-channel
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
 
     // Check for OpenGL errors
     GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    if (error != GL_NO_ERROR)
+    {
         cerr << "OpenGL error after texture upload: " << error << endl;
         glDeleteTextures(1, &image_texture);
         return false;
@@ -99,50 +107,58 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
 }
 
 // Function to load and process image with OpenCV effects
-bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height, 
-                                 float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false,
-                                 bool enable_binary = false, int color_space = 0, 
-                                 float rgb_threshold[3] = nullptr, float hsl_threshold[3] = nullptr, float hsv_threshold[3] = nullptr)
+bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height,
+                                  float brightness = 0.0f, float contrast = 1.0f, int blur_kernel = 0, bool grayscale = false,
+                                  bool enable_binary = false, int color_space = 0,
+                                  float rgb_threshold[3] = nullptr, float hsl_threshold[3] = nullptr, float hsv_threshold[3] = nullptr)
 {
     // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
     cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
-    if (image.empty()) {
+    if (image.empty())
+    {
         cerr << "Failed to load image for processing: " << filename << endl;
         return false;
     }
 
     // Ensure image is 3-channel BGR
-    if (image.channels() != 3) {
-        if (image.channels() == 4) {
+    if (image.channels() != 3)
+    {
+        if (image.channels() == 4)
+        {
             cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
-        } else if (image.channels() == 1) {
+        }
+        else if (image.channels() == 1)
+        {
             cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
         }
     }
 
     // Apply binary threshold if enabled
-    if (enable_binary) {
+    if (enable_binary)
+    {
         cv::Mat binary_mask;
-        
-        if (color_space == 0 && rgb_threshold) { // RGB
+
+        if (color_space == 0 && rgb_threshold)
+        { // RGB
             cv::Mat bgr_channels[3];
             cv::split(image, bgr_channels);
-            
+
             cv::Mat b_mask, g_mask, r_mask;
             cv::threshold(bgr_channels[0], b_mask, rgb_threshold[2], 255, cv::THRESH_BINARY); // B channel
             cv::threshold(bgr_channels[1], g_mask, rgb_threshold[1], 255, cv::THRESH_BINARY); // G channel
             cv::threshold(bgr_channels[2], r_mask, rgb_threshold[0], 255, cv::THRESH_BINARY); // R channel
-            
+
             cv::bitwise_and(b_mask, g_mask, binary_mask);
             cv::bitwise_and(binary_mask, r_mask, binary_mask);
         }
-        else if (color_space == 1 && hsl_threshold) { // HSL
+        else if (color_space == 1 && hsl_threshold)
+        { // HSL
             cv::Mat hls_image;
             cv::cvtColor(image, hls_image, cv::COLOR_BGR2HLS);
-            
+
             cv::Mat hls_channels[3];
             cv::split(hls_image, hls_channels);
-            
+
             cv::Mat h_mask, l_mask, s_mask;
             // H channel (0-180 in OpenCV)
             cv::threshold(hls_channels[0], h_mask, hsl_threshold[0], 255, cv::THRESH_BINARY);
@@ -150,17 +166,18 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
             cv::threshold(hls_channels[1], l_mask, hsl_threshold[2] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
             // S channel (0-255)
             cv::threshold(hls_channels[2], s_mask, hsl_threshold[1] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
-            
+
             cv::bitwise_and(h_mask, l_mask, binary_mask);
             cv::bitwise_and(binary_mask, s_mask, binary_mask);
         }
-        else if (color_space == 2 && hsv_threshold) { // HSV
+        else if (color_space == 2 && hsv_threshold)
+        { // HSV
             cv::Mat hsv_image;
             cv::cvtColor(image, hsv_image, cv::COLOR_BGR2HSV);
-            
+
             cv::Mat hsv_channels[3];
             cv::split(hsv_image, hsv_channels);
-            
+
             cv::Mat h_mask, s_mask, v_mask;
             // H channel (0-180 in OpenCV)
             cv::threshold(hsv_channels[0], h_mask, hsv_threshold[0], 255, cv::THRESH_BINARY);
@@ -168,13 +185,14 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
             cv::threshold(hsv_channels[1], s_mask, hsv_threshold[1] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
             // V channel (0-255)
             cv::threshold(hsv_channels[2], v_mask, hsv_threshold[2] * 255.0f / 100.0f, 255, cv::THRESH_BINARY);
-            
+
             cv::bitwise_and(h_mask, s_mask, binary_mask);
             cv::bitwise_and(binary_mask, v_mask, binary_mask);
         }
-        
+
         // Apply binary mask to original image
-        if (!binary_mask.empty()) {
+        if (!binary_mask.empty())
+        {
             cv::Mat result = cv::Mat::zeros(image.size(), image.type());
             image.copyTo(result, binary_mask);
             image = result;
@@ -182,25 +200,30 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
     }
 
     // Apply grayscale conversion if requested
-    if (grayscale) {
+    if (grayscale)
+    {
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
         cv::cvtColor(image, image, cv::COLOR_GRAY2BGR); // Convert back to 3-channel for consistency
     }
 
     // Apply brightness and contrast adjustments
-    if (brightness != 0.0f || contrast != 1.0f) {
+    if (brightness != 0.0f || contrast != 1.0f)
+    {
         image.convertTo(image, -1, contrast, brightness);
     }
 
     // Apply blur if requested
-    if (blur_kernel > 0) {
-        cv::GaussianBlur(image, image, cv::Size(blur_kernel * 2 + 1, blur_kernel * 2 + 1), 0);    }
+    if (blur_kernel > 0)
+    {
+        cv::GaussianBlur(image, image, cv::Size(blur_kernel * 2 + 1, blur_kernel * 2 + 1), 0);
+    }
 
     // Convert BGR to RGB (OpenCV uses BGR by default)
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-    
+
     // Ensure continuous memory layout
-    if (!image.isContinuous()) {
+    if (!image.isContinuous())
+    {
         image = image.clone();
     }
 
@@ -220,13 +243,14 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-    
+
     // Upload as RGB 3-channel
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
 
     // Check for OpenGL errors
     GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    if (error != GL_NO_ERROR)
+    {
         cerr << "OpenGL error after processed texture upload: " << error << endl;
         glDeleteTextures(1, &image_texture);
         return false;
@@ -242,27 +266,31 @@ bool LoadProcessedTextureFromFile(const char* filename, GLuint* out_texture, int
 int main()
 {
     // Initialize GLFW
-    if (!glfwInit()) {
+    if (!glfwInit())
+    {
         cerr << "Failed to initialize GLFW" << endl;
         return -1;
     }
 
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+    const char *glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Hello World ImGui", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow *window = glfwCreateWindow(1920, 1080, "Handwriting maintenance system", NULL, NULL);
+    if (window == NULL)
+    {
         cerr << "Failed to create GLFW window" << endl;
         glfwTerminate();
         return -1;
-    }    glfwMakeContextCurrent(window);
+    }
+    glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
     // Initialize GLEW
-    if (glewInit() != GLEW_OK) {
+    if (glewInit() != GLEW_OK)
+    {
         cerr << "Failed to initialize GLEW" << endl;
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -272,72 +300,85 @@ int main()
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);    ImGui_ImplOpenGL3_Init(glsl_version);
+    ImGui::StyleColorsDark(); // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Our state
     bool show_directory_window = true;
     bool show_opencv_window = true;
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);    // Load image texture variables
+    // Load image texture variables
     GLuint image_texture = 0;
     int image_width = 0;
     int image_height = 0;
     string current_image_path = "";
-      // Image processing parameters
+
+    // Image processing parameters
     static float brightness = 0.0f;
     static float contrast = 1.0f;
     static int blur_kernel = 0;
     static bool grayscale = false;
-    
+
     // Binary threshold parameters
     static bool enable_binary = false;
-    static int color_space = 0; // 0=RGB, 1=HSL, 2=HSV
+    static int color_space = 0;                               // 0=RGB, 1=HSL, 2=HSV
     static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f}; // R, G, B thresholds
     static float hsl_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, L thresholds
     static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};   // H, S, V thresholds
-    
+
     // Function to load image using OpenCV
-    auto load_image = [&](const string& path) {
+    auto load_image = [&](const string &path)
+    {
         // Clean up previous texture
-        if (image_texture != 0) {
+        if (image_texture != 0)
+        {
             glDeleteTextures(1, &image_texture);
             image_texture = 0;
         }
-        
-        if (LoadTextureFromFile(path.c_str(), &image_texture, &image_width, &image_height)) {
+
+        if (LoadTextureFromFile(path.c_str(), &image_texture, &image_width, &image_height))
+        {
             current_image_path = path;
             cout << "Successfully loaded image: " << path << " (" << image_width << "x" << image_height << ")" << endl;
-        } else {
+        }
+        else
+        {
             cerr << "Error: Could not load image: " << path << endl;
             current_image_path = "";
         }
     };
-      // Function to reload image with processing effects
-    auto reload_with_effects = [&]() {
-        if (!current_image_path.empty()) {
-            if (image_texture != 0) {
+    // Function to reload image with processing effects
+    auto reload_with_effects = [&]()
+    {
+        if (!current_image_path.empty())
+        {
+            if (image_texture != 0)
+            {
                 glDeleteTextures(1, &image_texture);
                 image_texture = 0;
             }
-            
+
             if (LoadProcessedTextureFromFile(current_image_path.c_str(), &image_texture, &image_width, &image_height,
-                                           brightness, contrast, blur_kernel, grayscale,
-                                           enable_binary, color_space, rgb_threshold, hsl_threshold, hsv_threshold)) {
+                                             brightness, contrast, blur_kernel, grayscale,
+                                             enable_binary, color_space, rgb_threshold, hsl_threshold, hsv_threshold))
+            {
                 cout << "Reloaded image with effects applied" << endl;
-            } else {
+            }
+            else
+            {
                 cerr << "Error: Could not reload image with effects" << endl;
             }
         }
     };
-    
+
     // Load initial image
     string initial_image_path = "C:/Users/ai/Documents/andy/code/learnPP/impool/IMGname (184).jpg";
     load_image(initial_image_path);
@@ -345,24 +386,30 @@ int main()
     // Directory listing state
     vector<string> directory_entries;
     string current_path = "../impool";
-    
+
     // Function to refresh directory listing
-    auto refresh_directory = [&]() {
+    auto refresh_directory = [&]()
+    {
         directory_entries.clear();
-        try {
-            for (const auto& entry : filesystem::directory_iterator(current_path)) {
+        try
+        {
+            for (const auto &entry : filesystem::directory_iterator(current_path))
+            {
                 string name = entry.path().filename().string();
-                if (entry.is_directory()) {
+                if (entry.is_directory())
+                {
                     name += "/";
                 }
                 directory_entries.push_back(name);
             }
             sort(directory_entries.begin(), directory_entries.end());
-        } catch (const filesystem::filesystem_error& ex) {
+        }
+        catch (const filesystem::filesystem_error &ex)
+        {
             directory_entries.clear();
             directory_entries.push_back("Error reading directory: " + string(ex.what()));
         }
-    };    // Initial directory load
+    }; // Initial directory load
     refresh_directory();
 
     // Main loop
@@ -381,158 +428,190 @@ int main()
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("主控制視窗");   
+            ImGui::Begin("main window");
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
 
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
                 counter++;
             ImGui::SameLine();
             ImGui::Text("counter = %d", counter);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
-        }            // 4. Show directory listing window
+        }
+
+        // 4. Show directory listing window
         if (show_directory_window)
         {
             ImGui::Begin("Image Browser", &show_directory_window);
-            
+
             ImGui::Text("Current Directory: %s", filesystem::absolute(current_path).string().c_str());
             ImGui::Text("Current Image: %s", current_image_path.empty() ? "None" : filesystem::path(current_image_path).filename().string().c_str());
-            
+
             if (ImGui::Button("Refresh"))
                 refresh_directory();
-            
+
             ImGui::Separator();
-            
+
             // Show directory contents with click to load functionality
             if (ImGui::BeginChild("DirectoryContents", ImVec2(0, 300), true))
             {
-                for (const auto& entry : directory_entries)
+                for (const auto &entry : directory_entries)
                 {
                     // Check if it's an image file
                     string ext = filesystem::path(entry).extension().string();
                     transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                     bool is_image = (ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".tiff" || ext == ".tga");
-                    
-                    if (is_image) {
+
+                    if (is_image)
+                    {
                         // Make image files clickable
-                        if (ImGui::Selectable(entry.c_str())) {
+                        if (ImGui::Selectable(entry.c_str()))
+                        {
                             string full_path = filesystem::absolute(current_path + "/" + entry).string();
                             load_image(full_path);
                         }
                         // Highlight current selected image
-                        if (!current_image_path.empty() && filesystem::path(current_image_path).filename().string() == entry) {
+                        if (!current_image_path.empty() && filesystem::path(current_image_path).filename().string() == entry)
+                        {
                             ImGui::SameLine();
                             ImGui::Text("  <-- Current");
                         }
-                    } else {
+                    }
+                    else
+                    {
                         // Non-image files shown as regular text
                         ImGui::Text("%s", entry.c_str());
                     }
                 }
             }
             ImGui::EndChild();
-            
             ImGui::Text("Total items: %zu", directory_entries.size());
             ImGui::Text("Tip: Click on image files to load them");
-            
+
             ImGui::End();
-        }        // 5. Show OpenCV image window
+        }
+
+        // 5. Show OpenCV image window
         if (show_opencv_window)
         {
             ImGui::Begin("OpenCV Image Viewer & Processor", &show_opencv_window);
-            
-            if (!current_image_path.empty()) {
+
+            if (!current_image_path.empty())
+            {
                 ImGui::Text("File: %s", filesystem::path(current_image_path).filename().string().c_str());
                 ImGui::Text("Full Path: %s", current_image_path.c_str());
-            } else {
+            }
+            else
+            {
                 ImGui::Text("No image loaded");
             }
-            
+
             ImGui::Separator();
-              // Image processing controls
-            if (!current_image_path.empty()) {
+            // Image processing controls
+            if (!current_image_path.empty())
+            {
                 ImGui::Text("Image Processing Controls:");
-                
+
                 bool effects_changed = false;
-                
-                if (ImGui::SliderFloat("Brightness", &brightness, -100.0f, 100.0f)) {
+
+                if (ImGui::SliderFloat("Brightness", &brightness, -100.0f, 100.0f))
+                {
                     effects_changed = true;
                 }
-                
-                if (ImGui::SliderFloat("Contrast", &contrast, 0.1f, 3.0f)) {
+
+                if (ImGui::SliderFloat("Contrast", &contrast, 0.1f, 3.0f))
+                {
                     effects_changed = true;
                 }
-                
-                if (ImGui::SliderInt("Blur", &blur_kernel, 0, 10)) {
+
+                if (ImGui::SliderInt("Blur", &blur_kernel, 0, 10))
+                {
                     effects_changed = true;
                 }
-                
-                if (ImGui::Checkbox("Grayscale", &grayscale)) {
+
+                if (ImGui::Checkbox("Grayscale", &grayscale))
+                {
                     effects_changed = true;
                 }
-                
+
                 ImGui::Separator();
-                
+
                 // Binary threshold controls
-                if (ImGui::Checkbox("Enable Binary Threshold", &enable_binary)) {
+                if (ImGui::Checkbox("Enable Binary Threshold", &enable_binary))
+                {
                     effects_changed = true;
                 }
-                
-                if (enable_binary) {
+
+                if (enable_binary)
+                {
                     ImGui::Text("Color Space Selection:");
-                    
-                    const char* color_space_items[] = { "RGB", "HSL", "HSV" };
-                    if (ImGui::Combo("Color Space", &color_space, color_space_items, IM_ARRAYSIZE(color_space_items))) {
+
+                    const char *color_space_items[] = {"RGB", "HSL", "HSV"};
+                    if (ImGui::Combo("Color Space", &color_space, color_space_items, IM_ARRAYSIZE(color_space_items)))
+                    {
                         effects_changed = true;
                     }
-                    
+
                     ImGui::Text("Threshold Controls:");
-                    
-                    if (color_space == 0) { // RGB
+
+                    if (color_space == 0)
+                    { // RGB
                         ImGui::Text("RGB Thresholds (0-255):");
-                        if (ImGui::SliderFloat("Red", &rgb_threshold[0], 0.0f, 255.0f)) {
+                        if (ImGui::SliderFloat("Red", &rgb_threshold[0], 0.0f, 255.0f))
+                        {
                             effects_changed = true;
                         }
-                        if (ImGui::SliderFloat("Green", &rgb_threshold[1], 0.0f, 255.0f)) {
+                        if (ImGui::SliderFloat("Green", &rgb_threshold[1], 0.0f, 255.0f))
+                        {
                             effects_changed = true;
                         }
-                        if (ImGui::SliderFloat("Blue", &rgb_threshold[2], 0.0f, 255.0f)) {
+                        if (ImGui::SliderFloat("Blue", &rgb_threshold[2], 0.0f, 255.0f))
+                        {
                             effects_changed = true;
                         }
                     }
-                    else if (color_space == 1) { // HSL
+                    else if (color_space == 1)
+                    { // HSL
                         ImGui::Text("HSL Thresholds:");
-                        if (ImGui::SliderFloat("Hue", &hsl_threshold[0], 0.0f, 180.0f)) {
+                        if (ImGui::SliderFloat("Hue", &hsl_threshold[0], 0.0f, 180.0f))
+                        {
                             effects_changed = true;
                         }
-                        if (ImGui::SliderFloat("Saturation", &hsl_threshold[1], 0.0f, 100.0f)) {
+                        if (ImGui::SliderFloat("Saturation", &hsl_threshold[1], 0.0f, 100.0f))
+                        {
                             effects_changed = true;
                         }
-                        if (ImGui::SliderFloat("Lightness", &hsl_threshold[2], 0.0f, 100.0f)) {
+                        if (ImGui::SliderFloat("Lightness", &hsl_threshold[2], 0.0f, 100.0f))
+                        {
                             effects_changed = true;
                         }
                     }
-                    else if (color_space == 2) { // HSV
+                    else if (color_space == 2)
+                    { // HSV
                         ImGui::Text("HSV Thresholds:");
-                        if (ImGui::SliderFloat("Hue", &hsv_threshold[0], 0.0f, 180.0f)) {
+                        if (ImGui::SliderFloat("Hue", &hsv_threshold[0], 0.0f, 180.0f))
+                        {
                             effects_changed = true;
                         }
-                        if (ImGui::SliderFloat("Saturation", &hsv_threshold[1], 0.0f, 100.0f)) {
+                        if (ImGui::SliderFloat("Saturation", &hsv_threshold[1], 0.0f, 100.0f))
+                        {
                             effects_changed = true;
                         }
-                        if (ImGui::SliderFloat("Value", &hsv_threshold[2], 0.0f, 100.0f)) {
+                        if (ImGui::SliderFloat("Value", &hsv_threshold[2], 0.0f, 100.0f))
+                        {
                             effects_changed = true;
                         }
                     }
                 }
-                
+
                 ImGui::SameLine();
-                if (ImGui::Button("Reset Effects")) {
+                if (ImGui::Button("Reset Effects"))
+                {
                     brightness = 0.0f;
                     contrast = 1.0f;
                     blur_kernel = 0;
@@ -545,64 +624,69 @@ int main()
                     hsv_threshold[1] = hsv_threshold[2] = 50.0f;
                     effects_changed = true;
                 }
-                
-                if (effects_changed) {
+
+                if (effects_changed)
+                {
                     reload_with_effects();
                 }
-                
+
                 ImGui::Separator();
             }
-            
+
             // Display the image
             if (image_texture != 0)
             {
                 ImGui::Text("Image Preview:");
-                
+
                 // Show different scaled versions
                 static float scale = 0.5f;
                 ImGui::SliderFloat("Display Scale", &scale, 0.1f, 2.0f);
-                
+
                 float display_width = image_width * scale;
                 float display_height = image_height * scale;
-                
+
                 // Limit display size to reasonable bounds
                 float max_display = 600.0f;
-                if (display_width > max_display || display_height > max_display) {
+                if (display_width > max_display || display_height > max_display)
+                {
                     float ratio = min(max_display / display_width, max_display / display_height);
                     display_width *= ratio;
                     display_height *= ratio;
                 }
-                
-                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(display_width, display_height));
+
+                ImGui::Image((void *)(intptr_t)image_texture, ImVec2(display_width, display_height));
             }
             else
             {
                 ImGui::Text("No image texture loaded");
                 ImGui::Text("Select an image from the Image Browser");
             }
-              ImGui::Separator();
+            ImGui::Separator();
             ImGui::Text("Image Properties:");
             ImGui::Text("  Dimensions: %dx%d pixels", image_width, image_height);
             ImGui::Text("  Format: RGB (3 channels)");
-            if (image_width > 0 && image_height > 0) {
+            if (image_width > 0 && image_height > 0)
+            {
                 float aspect_ratio = (float)image_width / (float)image_height;
                 ImGui::Text("  Aspect Ratio: %.3f", aspect_ratio);
                 ImGui::Text("  Total Pixels: %d", image_width * image_height);
-                
+
                 // Calculate file size estimation
                 float size_mb = (image_width * image_height * 3) / (1024.0f * 1024.0f);
                 ImGui::Text("  Memory Usage: %.2f MB (uncompressed)", size_mb);
-                
+
                 // Show file extension vs actual format warning
-                if (!current_image_path.empty()) {
+                if (!current_image_path.empty())
+                {
                     string ext = filesystem::path(current_image_path).extension().string();
                     ImGui::Text("  File Extension: %s", ext.c_str());
-                    if (ext == ".jpg" || ext == ".jpeg") {
+                    if (ext == ".jpg" || ext == ".jpeg")
+                    {
                         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "  Warning: Files may be WebP format with wrong extension!");
                     }
                 }
             }
-            
+
             ImGui::End();
         }
 
@@ -616,10 +700,12 @@ int main()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
-    }    // Cleanup
+    }
+
+    // Cleanup
     if (image_texture != 0)
         glDeleteTextures(1, &image_texture);
-    
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
