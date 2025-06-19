@@ -26,7 +26,8 @@
 #include <imgui_impl_opengl3.h> //do not remove
 #include <GLFW/glfw3.h>         //do not remove
 
-#include <bits/stdc++.h>
+#include <numeric>
+#include <unordered_map>
 #include <thread>
 #include <mutex>
 #include <random>
@@ -130,7 +131,7 @@ public:
     } // Convert cv::Point to Point2D
 
     // 計算平方距離
-    inline double sqDist(const Point &a, const Point &b)
+    inline double sqDist(const Point2D &a, const Point2D &b)
     {
         double dx = a.x - b.x;
         double dy = a.y - b.y;
@@ -139,7 +140,7 @@ public:
 
     // 多執行緒叢集函式
     std::vector<std::vector<int>> cluster(
-        const std::vector<Point> &points,
+        const std::vector<Point2D> &points,
         double radius,
         unsigned thread_cnt = std::thread::hardware_concurrency())
     {
@@ -199,19 +200,6 @@ public:
             clusters.emplace_back(std::move(vec));
         }
         return clusters;
-    }
-
-    void show(vector<Point2D> clusters)
-    {
-        for (size_t idx = 0; idx < clusters.size(); ++idx)
-        {
-            std::cout << "Cluster " << idx << " : ";
-            for (int p : clusters[idx])
-            {
-                std::cout << '(' << data[p].x << ',' << data[p].y << ") ";
-            }
-            std::cout << '\n';
-        }
     }
 };
 
