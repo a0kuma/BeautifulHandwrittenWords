@@ -44,8 +44,6 @@ bool LoadProcessedTextureFromFile(const char *filename, GLuint *out_texture, int
                                   float rgb_threshold[3] = nullptr, float hsl_threshold[3] = nullptr, float hsv_threshold[3] = nullptr)
 {
     // Load image using OpenCV with IMREAD_COLOR to ensure 3 channels
-    //TODO:RM
-    //cv::Mat 
     image = cv::imread(filename, cv::IMREAD_COLOR);
     if (image.empty())
     {
