@@ -26,7 +26,7 @@
 #include <GLFW/glfw3.h>//do not remove
 #include <GL/gl.h>//do not remove
 
-using namespace std;
+using namespace std;//do not remove
 
 int main()
 {
@@ -63,12 +63,36 @@ int main()
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    // Our state
+    ImGui_ImplOpenGL3_Init(glsl_version);    // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
+    bool show_directory_window = true;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    // Directory listing state
+    vector<string> directory_entries;
+    string current_path = ".";
+    
+    // Function to refresh directory listing
+    auto refresh_directory = [&]() {
+        directory_entries.clear();
+        try {
+            for (const auto& entry : filesystem::directory_iterator(current_path)) {
+                string name = entry.path().filename().string();
+                if (entry.is_directory()) {
+                    name += "/";
+                }
+                directory_entries.push_back(name);
+            }
+            sort(directory_entries.begin(), directory_entries.end());
+        } catch (const filesystem::filesystem_error& ex) {
+            directory_entries.clear();
+            directory_entries.push_back("Error reading directory: " + string(ex.what()));
+        }
+    };
+    
+    // Initial directory load
+    refresh_directory();
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -90,11 +114,10 @@ int main()
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
             ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
+            ImGui::Checkbox("Directory Window", &show_directory_window);
 
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
@@ -106,15 +129,40 @@ int main()
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
-        }
-
-        // 3. Show another simple window.
+        }        // 3. Show another simple window.
         if (show_another_window)
         {
             ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
             ImGui::Text("Hello from another window!");
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
+            ImGui::End();
+        }
+
+        // 4. Show directory listing window
+        if (show_directory_window)
+        {
+            ImGui::Begin("Directory Listing", &show_directory_window);
+            
+            ImGui::Text("Current Directory: %s", filesystem::absolute(current_path).string().c_str());
+            
+            if (ImGui::Button("Refresh"))
+                refresh_directory();
+            
+            ImGui::Separator();
+            
+            // Show directory contents
+            if (ImGui::BeginChild("DirectoryContents", ImVec2(0, 300), true))
+            {
+                for (const auto& entry : directory_entries)
+                {
+                    ImGui::Text("%s", entry.c_str());
+                }
+            }
+            ImGui::EndChild();
+            
+            ImGui::Text("Total items: %zu", directory_entries.size());
+            
             ImGui::End();
         }
 
