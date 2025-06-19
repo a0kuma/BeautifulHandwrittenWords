@@ -99,10 +99,26 @@ private:
             glDeleteTextures(1, &textureID);
             return 0;
         }
-        
-        // Convert BGR to RGB
+          // Convert BGR to RGB
         cv::Mat rgbImage;
         try {
+            // Additional validation before color conversion
+            if (image.empty() || image.data == nullptr) {
+                std::cerr << "[ERROR] Input image is empty or has null data before conversion" << std::endl;
+                glDeleteTextures(1, &textureID);
+                return 0;
+            }
+            
+            // Check image data integrity
+            if (image.total() == 0) {
+                std::cerr << "[ERROR] Image has zero total elements" << std::endl;
+                glDeleteTextures(1, &textureID);
+                return 0;
+            }
+            
+            std::cout << "[DEBUG] Converting image with " << image.channels() << " channels, size: " 
+                      << image.cols << "x" << image.rows << ", type: " << image.type() << std::endl;
+            
             if (image.channels() == 3) {
                 cv::cvtColor(image, rgbImage, cv::COLOR_BGR2RGB);
                 std::cout << "[DEBUG] Converted from BGR to RGB" << std::endl;
@@ -117,13 +133,28 @@ private:
                 glDeleteTextures(1, &textureID);
                 return 0;
             }
+            
+            // Validate conversion result
+            if (rgbImage.empty() || rgbImage.data == nullptr) {
+                std::cerr << "[ERROR] Color conversion failed - result is empty" << std::endl;
+                glDeleteTextures(1, &textureID);
+                return 0;
+            }
+            
         } catch (const cv::Exception& e) {
             std::cerr << "[ERROR] OpenCV error during color conversion: " << e.what() << std::endl;
             glDeleteTextures(1, &textureID);
             return 0;
+        } catch (const std::exception& e) {
+            std::cerr << "[ERROR] Standard exception during color conversion: " << e.what() << std::endl;
+            glDeleteTextures(1, &textureID);
+            return 0;
+        } catch (...) {
+            std::cerr << "[ERROR] Unknown exception during color conversion" << std::endl;
+            glDeleteTextures(1, &textureID);
+            return 0;
         }
-        
-        // Validate converted image
+          // Validate converted image
         if (rgbImage.empty() || rgbImage.data == nullptr) {
             std::cerr << "[ERROR] RGB image is empty or has null data after conversion" << std::endl;
             glDeleteTextures(1, &textureID);
@@ -132,13 +163,63 @@ private:
         
         std::cout << "[DEBUG] RGB image size: " << rgbImage.cols << "x" << rgbImage.rows << std::endl;
         
+        // Additional validation checks
+        if (rgbImage.cols <= 0 || rgbImage.rows <= 0) {
+            std::cerr << "[ERROR] Invalid image dimensions: " << rgbImage.cols << "x" << rgbImage.rows << std::endl;
+            glDeleteTextures(1, &textureID);
+            return 0;
+        }
+        
+        // Check if image is too large for OpenGL
+        GLint maxTextureSize;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+        std::cout << "[DEBUG] Max OpenGL texture size: " << maxTextureSize << std::endl;
+        
+        if (rgbImage.cols > maxTextureSize || rgbImage.rows > maxTextureSize) {
+            std::cerr << "[ERROR] Image too large for OpenGL: " << rgbImage.cols << "x" << rgbImage.rows 
+                      << " (max: " << maxTextureSize << ")" << std::endl;
+            glDeleteTextures(1, &textureID);
+            return 0;
+        }
+        
+        // Validate image data integrity
+        int expectedDataSize = rgbImage.cols * rgbImage.rows * 3; // 3 channels for RGB
+        if (rgbImage.total() * rgbImage.elemSize() != expectedDataSize) {
+            std::cerr << "[ERROR] Image data size mismatch. Expected: " << expectedDataSize 
+                      << ", Actual: " << (rgbImage.total() * rgbImage.elemSize()) << std::endl;
+            glDeleteTextures(1, &textureID);
+            return 0;
+        }
+        
+        // Check if image data is continuous in memory
+        if (!rgbImage.isContinuous()) {
+            std::cout << "[DEBUG] Image is not continuous, creating continuous copy" << std::endl;
+            cv::Mat continuousImage = rgbImage.clone();
+            rgbImage = continuousImage;
+        }
+        
+        std::cout << "[DEBUG] Image validation passed, uploading texture data..." << std::endl;
+        
         // Upload texture data
         try {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rgbImage.cols, rgbImage.rows, 
                          0, GL_RGB, GL_UNSIGNED_BYTE, rgbImage.data);
+            
+            // Check for OpenGL errors immediately after texture upload
+            GLenum uploadError = glGetError();
+            if (uploadError != GL_NO_ERROR) {
+                std::cerr << "[ERROR] OpenGL error during texture upload: " << uploadError << std::endl;
+                glDeleteTextures(1, &textureID);
+                return 0;
+            }
+            
             std::cout << "[DEBUG] Texture data uploaded successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "[ERROR] Standard exception during glTexImage2D: " << e.what() << std::endl;
+            glDeleteTextures(1, &textureID);
+            return 0;
         } catch (...) {
-            std::cerr << "[ERROR] Exception during glTexImage2D" << std::endl;
+            std::cerr << "[ERROR] Unknown exception during glTexImage2D" << std::endl;
             glDeleteTextures(1, &textureID);
             return 0;
         }
@@ -288,8 +369,7 @@ private:
             if (fileSize > 50 * 1024 * 1024) { // 50MB limit
                 std::cerr << "[WARNING] File is very large: " << fileSize << " bytes" << std::endl;
             }
-            
-            imgData.image = cv::imread(imgData.filepath, cv::IMREAD_COLOR);
+              imgData.image = cv::imread(imgData.filepath, cv::IMREAD_COLOR);
             
             if (imgData.image.empty()) {
                 std::cerr << "[ERROR] Cannot load image: " << imgData.filepath << std::endl;
@@ -304,7 +384,36 @@ private:
             }
             
             std::cout << "[DEBUG] Image loaded successfully: " << imgData.image.cols << "x" << imgData.image.rows 
-                      << ", channels: " << imgData.image.channels() << std::endl;
+                      << ", channels: " << imgData.image.channels() << ", type: " << imgData.image.type() << std::endl;
+            
+            // Additional validation for the loaded image
+            if (imgData.image.cols <= 0 || imgData.image.rows <= 0) {
+                std::cerr << "[ERROR] Invalid image dimensions after loading: " << imgData.image.cols << "x" << imgData.image.rows << std::endl;
+                imgData.image.release();
+                return;
+            }
+            
+            // Check for reasonable image size limits
+            if (imgData.image.cols > 16384 || imgData.image.rows > 16384) {
+                std::cerr << "[ERROR] Image dimensions too large: " << imgData.image.cols << "x" << imgData.image.rows << std::endl;
+                imgData.image.release();
+                return;
+            }
+            
+            // Validate image channels
+            if (imgData.image.channels() < 1 || imgData.image.channels() > 4) {
+                std::cerr << "[ERROR] Invalid number of channels: " << imgData.image.channels() << std::endl;
+                imgData.image.release();
+                return;
+            }
+            
+            // Check image data type
+            if (imgData.image.depth() != CV_8U) {
+                std::cout << "[DEBUG] Converting image to 8-bit unsigned" << std::endl;
+                cv::Mat converted;
+                imgData.image.convertTo(converted, CV_8U);
+                imgData.image = converted;
+            }
             
             // Validate image data
             if (imgData.image.data == nullptr) {
