@@ -335,7 +335,7 @@ int main()
         }        // 5. Show OpenCV image window
         if (show_opencv_window)
         {
-            ImGui::Begin("OpenCV Image Viewer", &show_opencv_window);
+            ImGui::Begin("OpenCV Image Viewer & Processor", &show_opencv_window);
             
             if (!current_image_path.empty()) {
                 ImGui::Text("File: %s", filesystem::path(current_image_path).filename().string().c_str());
@@ -346,30 +346,64 @@ int main()
             
             ImGui::Separator();
             
+            // Image processing controls
+            if (!current_image_path.empty()) {
+                ImGui::Text("Image Processing Controls:");
+                
+                bool effects_changed = false;
+                
+                if (ImGui::SliderFloat("Brightness", &brightness, -100.0f, 100.0f)) {
+                    effects_changed = true;
+                }
+                
+                if (ImGui::SliderFloat("Contrast", &contrast, 0.1f, 3.0f)) {
+                    effects_changed = true;
+                }
+                
+                if (ImGui::SliderInt("Blur", &blur_kernel, 0, 10)) {
+                    effects_changed = true;
+                }
+                
+                if (ImGui::Checkbox("Grayscale", &grayscale)) {
+                    effects_changed = true;
+                }
+                
+                ImGui::SameLine();
+                if (ImGui::Button("Reset Effects")) {
+                    brightness = 0.0f;
+                    contrast = 1.0f;
+                    blur_kernel = 0;
+                    grayscale = false;
+                    effects_changed = true;
+                }
+                
+                if (effects_changed) {
+                    reload_with_effects();
+                }
+                
+                ImGui::Separator();
+            }
+            
             // Display the image
             if (image_texture != 0)
             {
-                ImGui::Text("Original size preview:");
-                ImGui::Image((void*)(intptr_t)image_texture, ImVec2(128, 128));
-                
-                ImGui::Separator();
+                ImGui::Text("Image Preview:");
                 
                 // Show different scaled versions
-                static float scale = 1.0f;
-                ImGui::SliderFloat("Scale", &scale, 0.1f, 3.0f);
+                static float scale = 0.5f;
+                ImGui::SliderFloat("Display Scale", &scale, 0.1f, 2.0f);
                 
                 float display_width = image_width * scale;
                 float display_height = image_height * scale;
                 
                 // Limit display size to reasonable bounds
-                float max_display = 800.0f;
+                float max_display = 600.0f;
                 if (display_width > max_display || display_height > max_display) {
                     float ratio = min(max_display / display_width, max_display / display_height);
                     display_width *= ratio;
                     display_height *= ratio;
                 }
                 
-                ImGui::Text("Scaled version (%.1fx):", scale);
                 ImGui::Image((void*)(intptr_t)image_texture, ImVec2(display_width, display_height));
             }
             else
@@ -386,6 +420,10 @@ int main()
                 float aspect_ratio = (float)image_width / (float)image_height;
                 ImGui::Text("  Aspect Ratio: %.3f", aspect_ratio);
                 ImGui::Text("  Total Pixels: %d", image_width * image_height);
+                
+                // Calculate file size estimation
+                float size_mb = (image_width * image_height * 3) / (1024.0f * 1024.0f);
+                ImGui::Text("  Memory Usage: %.2f MB (uncompressed)", size_mb);
             }
             
             ImGui::End();
