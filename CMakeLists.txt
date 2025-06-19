@@ -50,6 +50,9 @@ set(OPENGL_LIBRARIES
     "${OPENGL_DIR}/lib/GlU32.Lib"
 )
 
+# libigl-stb 路徑設置
+set(LIBIGL_STB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libigl-stb")
+
 # ImGui 源文件
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 set(IMGUI_SOURCES
@@ -73,6 +76,7 @@ target_include_directories(ImageViewer PRIVATE
     ${GLFW_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
     ${OPENGL_INCLUDE_DIRS}
+    ${LIBIGL_STB_DIR}
 )
 
 # 鏈接庫 - 使用生成器表達式選擇正確的庫

@@ -25,8 +25,41 @@
 #include <imgui_impl_glfw.h>//do not remove
 #include <imgui_impl_opengl3.h>//do not remove
 #include <GLFW/glfw3.h>//do not remove
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 using namespace std;//do not remove
+
+// Simple helper function to load an image into a OpenGL texture with common settings
+bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
+{
+    // Load from file
+    int image_width = 0;
+    int image_height = 0;
+    unsigned char* image_data = stbi_load_from_memory((const unsigned char*)data, (int)data_size, &image_width, &image_height, NULL, 4);
+    if (image_data == NULL)
+        return false;
+
+    // Create a OpenGL texture identifier
+    GLuint image_texture;
+    glGenTextures(1, &image_texture);
+    glBindTexture(GL_TEXTURE_2D, image_texture);
+
+    // Setup filtering parameters for display
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Upload pixels into texture
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+    stbi_image_free(image_data);
+
+    *out_texture = image_texture;
+    *out_width = image_width;
+    *out_height = image_height;
+
+    return true;
+}
 
 int main()
 {
@@ -74,13 +107,32 @@ int main()
     bool show_demo_window = true;
     bool show_another_window = false;
     bool show_directory_window = true;
-    bool show_opencv_window = true;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool show_opencv_window = true;    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    // OpenCV image state
-    cv::Mat opencv_image = cv::Mat::zeros(48, 48, CV_8UC3);
-    opencv_image.setTo(cv::Scalar(139, 185, 221)); // BGR format for #ddb98b
+    // Load image texture variables
     GLuint image_texture = 0;
+    int image_width = 0;
+    int image_height = 0;
+    
+    // Load image file into memory
+    string image_path = "C:/Users/ai/Documents/andy/code/learnPP/impool/IMGname (184).jpg";
+    FILE* file = fopen(image_path.c_str(), "rb");
+    if (file) {
+        fseek(file, 0, SEEK_END);
+        size_t file_size = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        
+        vector<unsigned char> file_data(file_size);
+        fread(file_data.data(), 1, file_size, file);
+        fclose(file);
+        
+        // Load texture using the new function
+        if (!LoadTextureFromMemory(file_data.data(), file_size, &image_texture, &image_width, &image_height)) {
+            cerr << "Error: Could not load image texture!" << endl;
+        }
+    } else {
+        cerr << "Error: Could not open image file!" << endl;
+    }
 
     // Directory listing state
     vector<string> directory_entries;
@@ -102,32 +154,8 @@ int main()
             directory_entries.clear();
             directory_entries.push_back("Error reading directory: " + string(ex.what()));
         }
-    };
-      // Initial directory load
+    };    // Initial directory load
     refresh_directory();
-
-    // Function to create OpenGL texture from OpenCV Mat
-    auto create_texture_from_mat = [](const cv::Mat& mat) -> GLuint {
-        GLuint texture_id;
-        glGenTextures(1, &texture_id);
-        glBindTexture(GL_TEXTURE_2D, texture_id);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        
-        // Convert BGR to RGB for OpenGL
-        cv::Mat rgb_mat;
-        cv::cvtColor(mat, rgb_mat, cv::COLOR_BGR2RGB);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rgb_mat.cols, rgb_mat.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb_mat.data);
-        
-        return texture_id;
-    };
-    
-    // Create texture from the OpenCV image
-    image_texture = create_texture_from_mat(opencv_image);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -206,8 +234,7 @@ int main()
             
             ImGui::Text("OpenCV Image (48x48, RGB #ddb98b)");
             ImGui::Separator();
-            
-            // Display the image
+              // Display the image
             if (image_texture != 0)
             {
                 ImGui::Image((void*)(intptr_t)image_texture, ImVec2(48, 48));
@@ -221,8 +248,8 @@ int main()
                 ImGui::Text("Failed to load image texture");
             }
             
-            ImGui::Text("Image size: %dx%d", opencv_image.cols, opencv_image.rows);
-            ImGui::Text("Image channels: %d", opencv_image.channels());
+            ImGui::Text("Image size: %dx%d", image_width, image_height);
+            ImGui::Text("Image channels: RGBA (4)");
             
             ImGui::End();
         }
