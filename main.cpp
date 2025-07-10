@@ -21,6 +21,7 @@
 
 #include <opencv2/opencv.hpp>   //do not remove
 #include <GL/glew.h>            //do not remove - must be included before other OpenGL headers
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>              //do not remove
 #include <imgui_impl_glfw.h>    //do not remove
 #include <imgui_impl_opengl3.h> //do not remove
@@ -679,19 +680,76 @@ int main()
         }
 
         if (show_cluster_image_window)
+{
+    ImGui::Begin("Cluster Visualization", &show_cluster_image_window);
+    if (cluster_texture != 0)
+    {
+        // Persistent interaction state
+        static float  zoom = 1.0f;          // current zoom factor
+        static ImVec2 pan  = ImVec2(0, 0);  // pan offset inside the child region
+
+        // 1. Header -------------------------------------------------------
+        ImGui::Text("Cluster %d with %zu points", selected_cluster, clusters[selected_cluster].size());
+
+        // 2. Zoom controls ----------------------------------------------
+        ImGui::PushItemWidth(120);
+        if (ImGui::SliderFloat("Zoom", &zoom, 0.1f, 5.0f, "%.1fx", ImGuiSliderFlags_AlwaysClamp))
         {
-            ImGui::Begin("Cluster Visualization", &show_cluster_image_window);
-            if (cluster_texture != 0)
-            {
-                ImGui::Text("Cluster %d with %zu points", selected_cluster, clusters[selected_cluster].size());
-                ImGui::Image((void *)(intptr_t)cluster_texture, ImVec2((float)cluster_image_width, (float)cluster_image_height));
-            }
-            else
-            {
-                ImGui::Text("Could not generate cluster image.");
-            }
-            ImGui::End();
+            // Clamp pan whenever zoom changes via slider
+            pan.x = std::clamp(pan.x, -cluster_image_width  * zoom + 32.0f, 0.0f);
+            pan.y = std::clamp(pan.y, -cluster_image_height * zoom + 32.0f, 0.0f);
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset"))
+        {
+            zoom = 1.0f;
+            pan  = ImVec2(0, 0);
+        }
+        ImGui::PopItemWidth();
+
+        // 3. Mouse‑wheel zoom (about mouse position) --------------------
+        ImGuiIO& io = ImGui::GetIO();
+        if (ImGui::IsWindowHovered() && io.MouseWheel != 0.0f)
+        {
+            const float new_zoom = std::clamp(zoom + io.MouseWheel * 0.1f, 0.1f, 5.0f);
+            if (new_zoom != zoom)
+            {
+                const ImVec2 mouse_pos = io.MousePos - ImGui::GetWindowPos() - ImGui::GetCursorPos();
+                const float  scale     = new_zoom / zoom;
+                pan.x = (pan.x - mouse_pos.x) * scale + mouse_pos.x;
+                pan.y = (pan.y - mouse_pos.y) * scale + mouse_pos.y;
+                zoom  = new_zoom;
+            }
+        }
+
+        // 4. Middle‑mouse drag panning -----------------------------------
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Middle))
+        {
+            pan.x += io.MouseDelta.x;
+            pan.y += io.MouseDelta.y;
+        }
+
+        // Clamp pan so image is not dragged completely out of view
+        pan.x = std::clamp(pan.x, -cluster_image_width  * zoom + 32.0f, 0.0f);
+        pan.y = std::clamp(pan.y, -cluster_image_height * zoom + 32.0f, 0.0f);
+
+        // 5. Image display with scrollbars -------------------------------
+        ImGui::BeginChild("ImageRegion", ImVec2(0, 0), true,
+                          ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollWithMouse); // leave wheel free for zoom
+
+        ImGui::SetCursorPos(pan);
+        ImGui::Image((void *)(intptr_t)cluster_texture,
+                     ImVec2(cluster_image_width * zoom, cluster_image_height * zoom));
+
+        ImGui::EndChild();
+    }
+    else
+    {
+        ImGui::Text("Could not generate cluster image.");
+    }
+    ImGui::End();
+}
+
 
         // 4. Show directory listing window
         if (show_directory_window)
