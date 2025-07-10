@@ -1,3 +1,26 @@
+# 這是甚麼
+
+基於 https://buttaiwan.github.io/writemyfont/ 製造了一個可以手寫並且變成字體的app，有很多人講說想要批次處理，有一個演算法我在做光達的時候寫出來的，然後目前可以用這個演算法去處理手寫的文字，但是還需要一些後處理，比如說，azure OCR 等等
+
+## 技術的部分我想說的是
+
+- 平行處理 畢竟會用到許多圖片
+- 就是我寫光達的那個演算法
+- OCR 的部分
+- 排字的部分
+
+## 阿那個時候說要用平行處理是... 
+
+- 痾...我忘了
+
+## 忘了的部分
+
+- 我有寫GUI
+- 這GUI實在是我沒有知道在幹嘛
+- 如何編譯的?
+
+---
+
 # Image Viewer
 
 A C++ image viewer application built with ImGui and OpenCV, featuring fullscreen display with thumbnail navigation.
