@@ -53,6 +53,12 @@ set(OPENGL_LIBRARIES
 # libigl-stb 路徑設置
 set(LIBIGL_STB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libigl-stb")
 
+# jsoncpp 路徑設置
+set(JSONCPP_DIR "${VCPKG_PACKAGES}/jsoncpp_x64-windows")
+set(JSONCPP_INCLUDE_DIRS "${JSONCPP_DIR}/include")
+set(JSONCPP_LIBRARIES_RELEASE "${JSONCPP_DIR}/lib/jsoncpp.lib")
+set(JSONCPP_LIBRARIES_DEBUG "${JSONCPP_DIR}/debug/lib/jsoncppd.lib")
+
 # ImGui 源文件
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 set(IMGUI_SOURCES
@@ -77,6 +83,7 @@ target_include_directories(ImageViewer PRIVATE
     ${GLEW_INCLUDE_DIRS}
     ${OPENGL_INCLUDE_DIRS}
     ${LIBIGL_STB_DIR}
+    ${JSONCPP_INCLUDE_DIRS}
 )
 
 # 鏈接庫 - 使用生成器表達式選擇正確的庫
@@ -87,6 +94,8 @@ target_link_libraries(ImageViewer
     $<$<CONFIG:Release>:${GLFW_LIBRARIES_RELEASE}>
     $<$<CONFIG:Debug>:${GLEW_LIBRARIES_DEBUG}>
     $<$<CONFIG:Release>:${GLEW_LIBRARIES_RELEASE}>
+    $<$<CONFIG:Debug>:${JSONCPP_LIBRARIES_DEBUG}>
+    $<$<CONFIG:Release>:${JSONCPP_LIBRARIES_RELEASE}>
     ${OPENGL_LIBRARIES}
 )
 

@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -106,10 +106,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -117,7 +117,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_core4d.lib;C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_imgproc4d.lib;C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_imgcodecs4d.lib;C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_highgui4d.lib;C:\vcpkg\packages\glfw3_x64-windows\debug\lib\glfw3dll.lib;C:\vcpkg\packages\glew_x64-windows\debug\lib\glew32d.lib;C:\vcpkg\packages\opengl_x64-windows\lib\OpenGL32.Lib;C:\vcpkg\packages\opengl_x64-windows\lib\GlU32.Lib;user32.lib;gdi32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_core4d.lib;C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_imgproc4d.lib;C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_imgcodecs4d.lib;C:\vcpkg\packages\opencv4_x64-windows\debug\lib\opencv_highgui4d.lib;C:\vcpkg\packages\glfw3_x64-windows\debug\lib\glfw3dll.lib;C:\vcpkg\packages\glew_x64-windows\debug\lib\glew32d.lib;C:\vcpkg\packages\jsoncpp_x64-windows\debug\lib\jsoncppd.lib;C:\vcpkg\packages\opengl_x64-windows\lib\OpenGL32.Lib;C:\vcpkg\packages\opengl_x64-windows\lib\GlU32.Lib;user32.lib;gdi32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -132,7 +132,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -153,10 +153,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -164,7 +164,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_core4.lib;C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_imgproc4.lib;C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_imgcodecs4.lib;C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_highgui4.lib;C:\vcpkg\packages\glfw3_x64-windows\lib\glfw3dll.lib;C:\vcpkg\packages\glew_x64-windows\lib\glew32.lib;C:\vcpkg\packages\opengl_x64-windows\lib\OpenGL32.Lib;C:\vcpkg\packages\opengl_x64-windows\lib\GlU32.Lib;user32.lib;gdi32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_core4.lib;C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_imgproc4.lib;C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_imgcodecs4.lib;C:\vcpkg\packages\opencv4_x64-windows\lib\opencv_highgui4.lib;C:\vcpkg\packages\glfw3_x64-windows\lib\glfw3dll.lib;C:\vcpkg\packages\glew_x64-windows\lib\glew32.lib;C:\vcpkg\packages\jsoncpp_x64-windows\lib\jsoncpp.lib;C:\vcpkg\packages\opengl_x64-windows\lib\OpenGL32.Lib;C:\vcpkg\packages\opengl_x64-windows\lib\GlU32.Lib;user32.lib;gdi32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -179,7 +179,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -200,10 +200,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -226,7 +226,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -246,10 +246,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ai\Documents\andy\code\learnPP\imgui;C:\Users\ai\Documents\andy\code\learnPP\imgui\backends;C:\vcpkg\packages\opencv4_x64-windows\include;C:\vcpkg\packages\opencv4_x64-windows\include\opencv4;C:\vcpkg\packages\glfw3_x64-windows\include;C:\vcpkg\packages\glew_x64-windows\include;C:\vcpkg\packages\opengl_x64-windows\include;C:\Users\ai\Documents\andy\code\learnPP\libigl-stb;C:\vcpkg\packages\jsoncpp_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>

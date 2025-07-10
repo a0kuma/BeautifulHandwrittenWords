@@ -19,6 +19,22 @@
 - 這GUI實在是我沒有知道在幹嘛
 - 如何編譯的?
 
+## 執行期間有點迷
+
+```
+C:\Users\ai\Documents\andy\code\learnPP\build\Release>ImageViewer.exe
+Error searching for initial image: directory_iterator::directory_iterator: 系統找不到指定的路徑。: "../impool"
+No image with '184' in filename found in ../impool
+No existing binary threshold settings file found.
+^C
+C:\Users\ai\Documents\andy\code\learnPP\build\Release>cd ..
+
+C:\Users\ai\Documents\andy\code\learnPP\build>Release\ImageViewer.exe
+Found initial image: C:\Users\ai\Documents\andy\code\learnPP\impool\IMGname (184).webp
+Successfully loaded image: C:\Users\ai\Documents\andy\code\learnPP\impool\IMGname (184).webp (1242x914)
+No existing binary threshold settings file found.
+```
+
 ---
 
 # Image Viewer

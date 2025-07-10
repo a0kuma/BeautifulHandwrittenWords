@@ -12,6 +12,7 @@
 #include <cstdio>     //do not remove
 #include <sstream>    //do not remove
 #include <iomanip>    //do not remove
+#include <cstring>    //do not remove
 
 #ifdef _WIN32
 #include <windows.h> //do not remove
@@ -33,6 +34,8 @@
 #include <mutex>
 #include <random>
 #include <atomic>
+#include <fstream>
+#include <json/json.h>
 
 using namespace std; // do not remove
 
@@ -44,6 +47,136 @@ static float rgb_threshold[3] = {128.0f, 128.0f, 128.0f};
 static float hsl_threshold[3] = {0.0f, 0.0f, 68.0f};
 static float hsv_threshold[3] = {180.0f, 50.0f, 50.0f};
 cv::Mat image;
+
+// Binary threshold setting structure
+struct BinaryThresholdSetting {
+    string name;
+    int color_space;
+    float rgb_threshold[3];
+    float hsl_threshold[3];
+    float hsv_threshold[3];
+    bool enable_binary;
+    
+    BinaryThresholdSetting() : color_space(1), enable_binary(false) {
+        rgb_threshold[0] = rgb_threshold[1] = rgb_threshold[2] = 128.0f;
+        hsl_threshold[0] = 0.0f; hsl_threshold[1] = 0.0f; hsl_threshold[2] = 68.0f;
+        hsv_threshold[0] = 180.0f; hsv_threshold[1] = 50.0f; hsv_threshold[2] = 50.0f;
+    }
+};
+
+// Function to get the document directory path
+string getDocumentPath() {
+#ifdef _WIN32
+    char* userProfile = nullptr;
+    size_t len = 0;
+    if (_dupenv_s(&userProfile, &len, "USERPROFILE") == 0 && userProfile != nullptr) {
+        string path = string(userProfile) + "\\Documents\\imgBinHistory.json";
+        free(userProfile);
+        return path;
+    }
+    return "imgBinHistory.json"; // Fallback
+#else
+    char* home = getenv("HOME");
+    if (home) {
+        return string(home) + "/imgBinHistory.json";
+    }
+    return "imgBinHistory.json"; // Fallback
+#endif
+}
+
+// Function to save binary threshold settings
+void saveBinaryThresholdSettings(const vector<BinaryThresholdSetting>& settings) {
+    Json::Value root(Json::arrayValue);
+    
+    for (const auto& setting : settings) {
+        Json::Value item;
+        item["name"] = setting.name;
+        item["color_space"] = setting.color_space;
+        item["enable_binary"] = setting.enable_binary;
+        
+        Json::Value rgb(Json::arrayValue);
+        for (int i = 0; i < 3; ++i) {
+            rgb.append(setting.rgb_threshold[i]);
+        }
+        item["rgb_threshold"] = rgb;
+        
+        Json::Value hsl(Json::arrayValue);
+        for (int i = 0; i < 3; ++i) {
+            hsl.append(setting.hsl_threshold[i]);
+        }
+        item["hsl_threshold"] = hsl;
+        
+        Json::Value hsv(Json::arrayValue);
+        for (int i = 0; i < 3; ++i) {
+            hsv.append(setting.hsv_threshold[i]);
+        }
+        item["hsv_threshold"] = hsv;
+        
+        root.append(item);
+    }
+    
+    string filePath = getDocumentPath();
+    ofstream file(filePath);
+    if (file.is_open()) {
+        Json::StreamWriterBuilder builder;
+        builder["indentation"] = "  ";
+        unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+        writer->write(root, &file);
+        cout << "Binary threshold settings saved to: " << filePath << endl;
+    } else {
+        cerr << "Failed to save binary threshold settings to: " << filePath << endl;
+    }
+}
+
+// Function to load binary threshold settings
+vector<BinaryThresholdSetting> loadBinaryThresholdSettings() {
+    vector<BinaryThresholdSetting> settings;
+    string filePath = getDocumentPath();
+    
+    ifstream file(filePath);
+    if (!file.is_open()) {
+        cout << "No existing binary threshold settings file found." << endl;
+        return settings;
+    }
+    
+    Json::Value root;
+    Json::CharReaderBuilder builder;
+    string errors;
+    
+    if (Json::parseFromStream(builder, file, &root, &errors)) {
+        for (const auto& item : root) {
+            BinaryThresholdSetting setting;
+            setting.name = item["name"].asString();
+            setting.color_space = item["color_space"].asInt();
+            setting.enable_binary = item["enable_binary"].asBool();
+            
+            if (item["rgb_threshold"].isArray() && item["rgb_threshold"].size() == 3) {
+                for (int i = 0; i < 3; ++i) {
+                    setting.rgb_threshold[i] = item["rgb_threshold"][i].asFloat();
+                }
+            }
+            
+            if (item["hsl_threshold"].isArray() && item["hsl_threshold"].size() == 3) {
+                for (int i = 0; i < 3; ++i) {
+                    setting.hsl_threshold[i] = item["hsl_threshold"][i].asFloat();
+                }
+            }
+            
+            if (item["hsv_threshold"].isArray() && item["hsv_threshold"].size() == 3) {
+                for (int i = 0; i < 3; ++i) {
+                    setting.hsv_threshold[i] = item["hsv_threshold"][i].asFloat();
+                }
+            }
+            
+            settings.push_back(setting);
+        }
+        cout << "Loaded " << settings.size() << " binary threshold settings from: " << filePath << endl;
+    } else {
+        cerr << "Failed to parse binary threshold settings file: " << errors << endl;
+    }
+    
+    return settings;
+}
 
 // 並查集（Disjoint‑Set Union）支援多執行緒
 class ParallelDSU
@@ -541,7 +674,7 @@ int main()
             directory_entries.clear();
             directory_entries.push_back("Error reading directory: " + string(ex.what()));
         }
-    }; // Initial directory load
+    };    // Initial directory load
     refresh_directory();
 
     static bool show_clusters_window = false;
@@ -552,6 +685,15 @@ int main()
     static int cluster_image_width = 0;
     static int cluster_image_height = 0;
     static bool show_cluster_image_window = false;
+
+    // Binary threshold settings management
+    static vector<BinaryThresholdSetting> binary_settings;
+    static bool show_binary_settings_window = false;
+    static char setting_name_buffer[256] = "";
+    static int selected_setting_index = -1;
+
+    // Load existing binary threshold settings
+    binary_settings = loadBinaryThresholdSettings();
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -570,6 +712,7 @@ int main()
             ImGui::Begin("main window");
             ImGui::Checkbox("Directory Window", &show_directory_window);
             ImGui::Checkbox("OpenCV Window", &show_opencv_window);
+            ImGui::Checkbox("Binary Settings Manager", &show_binary_settings_window);
 
             if (ImGui::Button("Compare non-zero points to total pixels"))
             {
@@ -749,6 +892,151 @@ int main()
     }
     ImGui::End();
 }
+
+        // Binary Settings Manager Window
+        if (show_binary_settings_window)
+        {
+            ImGui::Begin("Binary Settings Manager", &show_binary_settings_window);
+            
+            ImGui::Text("Saved Binary Threshold Settings:");
+            ImGui::Separator();
+            
+            if (binary_settings.empty())
+            {
+                ImGui::Text("No saved settings found.");
+                ImGui::Text("Save some binary threshold settings first!");
+            }
+            else
+            {
+                // Settings list
+                if (ImGui::BeginChild("SettingsList", ImVec2(0, 200), true))
+                {
+                    for (size_t i = 0; i < binary_settings.size(); ++i)
+                    {
+                        const auto& setting = binary_settings[i];
+                        
+                        bool is_selected = (selected_setting_index == static_cast<int>(i));
+                        if (ImGui::Selectable(setting.name.c_str(), is_selected))
+                        {
+                            selected_setting_index = static_cast<int>(i);
+                        }
+                        
+                        // Show setting details on hover
+                        if (ImGui::IsItemHovered())
+                        {
+                            ImGui::BeginTooltip();
+                            ImGui::Text("Color Space: %s", 
+                                setting.color_space == 0 ? "RGB" : 
+                                setting.color_space == 1 ? "HSL" : "HSV");
+                            ImGui::Text("Binary Enabled: %s", setting.enable_binary ? "Yes" : "No");
+                            
+                            if (setting.color_space == 0) {
+                                ImGui::Text("RGB: %.1f, %.1f, %.1f", 
+                                    setting.rgb_threshold[0], setting.rgb_threshold[1], setting.rgb_threshold[2]);
+                            } else if (setting.color_space == 1) {
+                                ImGui::Text("HSL: %.1f, %.1f, %.1f", 
+                                    setting.hsl_threshold[0], setting.hsl_threshold[1], setting.hsl_threshold[2]);
+                            } else {
+                                ImGui::Text("HSV: %.1f, %.1f, %.1f", 
+                                    setting.hsv_threshold[0], setting.hsv_threshold[1], setting.hsv_threshold[2]);
+                            }
+                            ImGui::EndTooltip();
+                        }
+                    }
+                }
+                ImGui::EndChild();
+                
+                // Action buttons
+                if (selected_setting_index >= 0 && selected_setting_index < static_cast<int>(binary_settings.size()))
+                {
+                    if (ImGui::Button("Load Selected Setting"))
+                    {
+                        const auto& setting = binary_settings[selected_setting_index];
+                        
+                        // Apply the setting
+                        color_space = setting.color_space;
+                        enable_binary = setting.enable_binary;
+                        
+                        memcpy(rgb_threshold, setting.rgb_threshold, sizeof(rgb_threshold));
+                        memcpy(hsl_threshold, setting.hsl_threshold, sizeof(hsl_threshold));
+                        memcpy(hsv_threshold, setting.hsv_threshold, sizeof(hsv_threshold));
+                        
+                        // Reload image with new settings
+                        reload_with_effects();
+                        
+                        cout << "Loaded binary threshold setting: " << setting.name << endl;
+                    }
+                    
+                    ImGui::SameLine();
+                    if (ImGui::Button("Delete Selected Setting"))
+                    {
+                        ImGui::OpenPopup("Confirm Delete");
+                    }
+                    
+                    // Confirm delete popup
+                    if (ImGui::BeginPopupModal("Confirm Delete", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+                    {
+                        const auto& setting = binary_settings[selected_setting_index];
+                        ImGui::Text("Are you sure you want to delete:");
+                        ImGui::Text("\"%s\"?", setting.name.c_str());
+                        
+                        if (ImGui::Button("Yes, Delete", ImVec2(120, 0)))
+                        {
+                            binary_settings.erase(binary_settings.begin() + selected_setting_index);
+                            saveBinaryThresholdSettings(binary_settings);
+                            selected_setting_index = -1;
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::SameLine();
+                        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                        {
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::EndPopup();
+                    }
+                }
+                
+                ImGui::Separator();
+                
+                if (ImGui::Button("Clear All Settings"))
+                {
+                    ImGui::OpenPopup("Confirm Clear All");
+                }
+                
+                // Confirm clear all popup
+                if (ImGui::BeginPopupModal("Confirm Clear All", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::Text("Are you sure you want to delete ALL settings?");
+                    ImGui::Text("This action cannot be undone!");
+                    
+                    if (ImGui::Button("Yes, Clear All", ImVec2(120, 0)))
+                    {
+                        binary_settings.clear();
+                        saveBinaryThresholdSettings(binary_settings);
+                        selected_setting_index = -1;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                    {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+            
+            ImGui::Separator();
+            ImGui::Text("Settings file location:");
+            ImGui::Text("%s", getDocumentPath().c_str());
+            
+            if (ImGui::Button("Reload Settings from File"))
+            {
+                binary_settings = loadBinaryThresholdSettings();
+                selected_setting_index = -1;
+            }
+            
+            ImGui::End();
+        }
 
 
         // 4. Show directory listing window
@@ -930,6 +1218,63 @@ int main()
                     hsl_threshold[1] = hsl_threshold[2] = 50.0f;
                     hsv_threshold[1] = hsv_threshold[2] = 50.0f;
                     effects_changed = true;
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Save Binary Settings"))
+                {
+                    if (enable_binary) {
+                        // Create a dialog to get the setting name
+                        strcpy_s(setting_name_buffer, sizeof(setting_name_buffer), "");
+                        ImGui::OpenPopup("Save Binary Setting");
+                    } else {
+                        ImGui::OpenPopup("Binary Not Enabled");
+                    }
+                }
+
+                // Popup for saving binary settings
+                if (ImGui::BeginPopupModal("Save Binary Setting", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::Text("Enter a name for this binary threshold setting:");
+                    ImGui::InputText("Setting Name", setting_name_buffer, sizeof(setting_name_buffer));
+                    
+                    if (ImGui::Button("Save", ImVec2(120, 0)))
+                    {
+                        if (strlen(setting_name_buffer) > 0) {
+                            BinaryThresholdSetting new_setting;
+                            new_setting.name = string(setting_name_buffer);
+                            new_setting.color_space = color_space;
+                            new_setting.enable_binary = enable_binary;
+                            
+                            memcpy(new_setting.rgb_threshold, rgb_threshold, sizeof(rgb_threshold));
+                            memcpy(new_setting.hsl_threshold, hsl_threshold, sizeof(hsl_threshold));
+                            memcpy(new_setting.hsv_threshold, hsv_threshold, sizeof(hsv_threshold));
+                            
+                            binary_settings.push_back(new_setting);
+                            saveBinaryThresholdSettings(binary_settings);
+                            
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                    {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+
+                // Popup for binary not enabled warning
+                if (ImGui::BeginPopupModal("Binary Not Enabled", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::Text("Binary threshold is not enabled!");
+                    ImGui::Text("Please enable binary threshold before saving settings.");
+                    
+                    if (ImGui::Button("OK", ImVec2(120, 0)))
+                    {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
                 }
 
                 if (effects_changed)
